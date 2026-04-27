@@ -1,0 +1,46 @@
+/* visual/css/style.css */
+
+/* Animações */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Grid de Páginas (Scroll bonito) */
+#pages-grid::-webkit-scrollbar { width: 8px; }
+#pages-grid::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+#pages-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+#pages-grid::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* TOAST NOTIFICATION (Aquele aviso preto elegante) */
+#custom-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #1f2937; /* Gray 900 */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 50;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+#custom-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#custom-toast.error {
+    border-left: 4px solid #ef4444; /* Red 500 */
+}
+
+#custom-toast.success {
+    border-left: 4px solid #22c55e; /* Green 500 */
+}
