@@ -1,5 +1,16 @@
 # Histórico e Diário de Decisões Arquiteturais (I Love Security) 🔐
 
+## [28/04/2026] - Estabilização do Modo Studio e UX de Alta Precisão
+- **Problema:** Interferência entre as ferramentas de edição (pincel) e navegação (pan). O usuário acabava desenhando acidentalmente ao tentar reposicionar a imagem com zoom.
+- **Solução:** Implementação de arquitetura de estados para navegação:
+  - **Navegação Inteligente:** Suporte a Zoom (Scroll) e Pan (Espaço + Mouse Drag).
+  - **Bloqueio de Conflito:** O pincel de edição é desativado automaticamente quando a tecla Espaço está pressionada ou o sistema detecta movimentação de tela.
+  - **Feedback Visual (Cursor Adaptativo):** 
+    - O cursor do pincel agora escala visualmente junto com o zoom, mantendo a percepção real do tamanho do traço.
+    - Troca dinâmica de cursor para `grab` durante a movimentação para reforçar o contexto de navegação.
+- **Resultado:** Experiência de edição nível "Photoshop" dentro do navegador, permitindo ajustes cirúrgicos em resoluções extremas sem erros de interface.
+
+
 ## [28/04/2026] - Correção do "BO" de Tamanho TIF (Inflação de Bits)
 - **Problema:** Arquivos TIF de 30MB (P&B) explodiam para 1.4GB após organização/compressão.
 - **Causa:** Conversão forçada para RGB (24-bit) e uso de compressão JPEG inadequada para documentos.

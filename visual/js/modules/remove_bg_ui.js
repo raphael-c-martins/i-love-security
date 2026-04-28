@@ -9,22 +9,34 @@ async function setupRemoveBgVisualEditor(file) {
     }
 
     uploadContainer.innerHTML = '';
-    uploadContainer.className = "w-full max-w-[95%] mx-auto py-6 animate-fade-in";
+    uploadContainer.className = "w-full max-w-[95%] mx-auto py-2 animate-fade-in";
+
+    // Oculta o header principal para dar foco total à ferramenta (Studio Mode)
+    const headerSection = document.getElementById('header-section');
+    if (headerSection) headerSection.classList.add('hidden');
 
     // Cria a URL local do arquivo original para exibição imediata
     const originalImageUrl = URL.createObjectURL(file);
 
     // Estrutura principal da UI (Enquanto processa)
     const editorWrapper = document.createElement('div');
-    editorWrapper.className = "flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]";
+    editorWrapper.className = "flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)]";
+
+
 
     editorWrapper.innerHTML = `
         <!-- Área Visual (Esquerda/Centro) -->
         <div class="flex-1 bg-gray-100 rounded-xl border border-gray-200 flex flex-col overflow-hidden relative" id="bg-editor-area">
             
             <div class="bg-white p-3 border-b border-gray-200 flex justify-between items-center z-10">
-                <span class="text-sm font-bold text-gray-500 uppercase tracking-wide px-2">Remoção de Fundo com IA</span>
+                <div class="flex items-center gap-4">
+                    <button id="bg-back-btn" class="text-gray-400 hover:text-red-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </button>
+                    <span class="text-sm font-bold text-gray-500 uppercase tracking-wide">Remoção de Fundo com IA</span>
+                </div>
             </div>
+
 
             <!-- Loading State -->
             <div id="remove-bg-loading" class="flex-1 flex flex-col items-center justify-center text-gray-500 absolute inset-0 z-20 bg-white/80 backdrop-blur-sm">
@@ -44,7 +56,8 @@ async function setupRemoveBgVisualEditor(file) {
                     <div class="absolute inset-0 z-0 bg-white" style="background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;"></div>
                     
                     <!-- Canvas Sem Fundo (Edição de Pincel) -->
-                    <canvas id="canvas-no-bg" class="relative z-10 max-w-full object-contain cursor-crosshair" style="max-height: calc(100vh - 200px); touch-action: none;"></canvas>
+                    <canvas id="canvas-no-bg" class="relative z-10 max-w-full object-contain cursor-crosshair" style="max-height: 100%; touch-action: none;"></canvas>
+
                     
                     <!-- Imagem Original (Cima - Recortada) -->
                     <img id="img-original" src="${originalImageUrl}" class="absolute top-0 left-0 w-full h-full object-contain pointer-events-none z-20" style="clip-path: inset(0 50% 0 0);" />
@@ -57,9 +70,10 @@ async function setupRemoveBgVisualEditor(file) {
                         </div>
                     </div>
 
-                    <!-- Cursor Visual do Pincel -->
-                    <div id="brush-cursor" class="absolute rounded-full pointer-events-none z-[60] hidden" style="border: 2px solid white; background-color: rgba(236, 72, 153, 0.4); transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.5); transition: width 0.1s, height 0.1s;"></div>
                 </div>
+
+                <!-- Cursor Visual do Pincel (fora do wrapper para não sofrer transform de zoom) -->
+                <div id="brush-cursor" class="absolute rounded-full pointer-events-none z-[60] hidden" style="border: 2px solid white; background-color: rgba(236, 72, 153, 0.4); transform: translate(-50%, -50%); box-shadow: 0 0 4px rgba(0,0,0,0.5); transition: width 0.1s, height 0.1s;"></div>
             </div>
         </div>
 
@@ -122,6 +136,15 @@ async function setupRemoveBgVisualEditor(file) {
         else location.reload();
     };
 
+    const bgBackBtn = document.getElementById('bg-back-btn');
+    if (bgBackBtn) {
+        bgBackBtn.onclick = () => {
+            URL.revokeObjectURL(originalImageUrl);
+            location.reload(); // Volta para a tela de cards
+        };
+    }
+
+
     let processedImageB64 = null;
     let finalFilename = "Imagem_Sem_Fundo.png";
 
@@ -168,6 +191,7 @@ async function setupRemoveBgVisualEditor(file) {
         tempImg.src = processedImageB64;
 
         setupSlider();
+        setupZoomAndPan();
 
     } catch (e) {
         console.error(e);
@@ -248,7 +272,7 @@ function setupBrushEditor(canvas, ctx, originalImg) {
     
     const updateCursorSize = () => {
         const rect = canvas.getBoundingClientRect();
-        const scaleDisplay = rect.width / canvas.width; // Fator de escala visual
+        const scaleDisplay = rect.width / canvas.width; // Fator de escala visual (inclui zoom)
         const visualSize = brushSize * scaleDisplay;
         brushCursor.style.width = `${visualSize}px`;
         brushCursor.style.height = `${visualSize}px`;
@@ -313,6 +337,9 @@ function setupBrushEditor(canvas, ctx, originalImg) {
         // Bloqueia desenho se estiver arrastando o Slider de Antes/Depois
         if (e.target.id === 'slider-handle' || e.target.closest('#slider-handle')) return;
         
+        // Bloqueia se estiver movendo a tela (Spacebar ou Botão do Meio)
+        if (window.isCanvasPanning || window.isSpaceDown || (e.button !== 0 && e.type !== 'touchstart')) return;
+        
         isDrawing = true;
         lastPos = getPos(e);
         drawLine(lastPos, {x: lastPos.x + 0.1, y: lastPos.y});
@@ -320,23 +347,29 @@ function setupBrushEditor(canvas, ctx, originalImg) {
         if (e.type === 'touchstart') e.preventDefault();
     };
 
+
     const moveDraw = (e) => {
-        // Atualiza a posição do cursor visual
-        const rect = canvas.getBoundingClientRect();
+        // Atualiza a posição do cursor visual relativo ao container (não ao wrapper com zoom)
+        const container = document.getElementById('comparison-container');
+        const containerRect = container.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         let clientY = e.clientY || (e.touches && e.touches[0].clientY);
         
         if (clientX && clientY) {
-            brushCursor.style.left = `${clientX - rect.left}px`;
-            brushCursor.style.top = `${clientY - rect.top}px`;
+            brushCursor.style.left = `${clientX - containerRect.left}px`;
+            brushCursor.style.top = `${clientY - containerRect.top}px`;
         }
 
-        if (!isDrawing) return;
+        // Recalcula tamanho do cursor a cada frame (acompanha zoom)
+        updateCursorSize();
+
+        if (!isDrawing || window.isCanvasPanning || window.isSpaceDown) return;
         const newPos = getPos(e);
         drawLine(lastPos, newPos);
         lastPos = newPos;
         if (e.type === 'touchmove') e.preventDefault();
     };
+
 
     const endDraw = () => {
         isDrawing = false;
@@ -358,6 +391,125 @@ function setupBrushEditor(canvas, ctx, originalImg) {
     canvas.addEventListener('touchstart', startDraw, {passive: false});
     canvas.addEventListener('touchmove', moveDraw, {passive: false});
     window.addEventListener('touchend', endDraw);
+}
+
+function setupZoomAndPan() {
+    const container = document.getElementById('comparison-container');
+    const wrapper = document.getElementById('image-wrapper');
+    
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+    
+    // Configura foco para o espaço funcionar
+    container.tabIndex = 0;
+    container.style.outline = 'none';
+    
+    // Pequeno delay para forçar o foco quando a UI terminar de carregar
+    setTimeout(() => container.focus(), 100);
+    
+    window.isSpaceDown = false;
+    const canvasNoBg = document.getElementById('canvas-no-bg');
+    
+    container.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !window.isSpaceDown) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+            window.isSpaceDown = true;
+            container.style.cursor = 'grab';
+            if (canvasNoBg) canvasNoBg.style.cursor = 'grab';
+        }
+    });
+    
+    container.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+            window.isSpaceDown = false;
+            container.style.cursor = 'default';
+            if (canvasNoBg) canvasNoBg.style.cursor = 'crosshair';
+        }
+    });
+
+    window.addEventListener('blur', () => {
+        window.isSpaceDown = false;
+        if (container) container.style.cursor = 'default';
+        if (canvasNoBg) canvasNoBg.style.cursor = 'crosshair';
+    });
+    
+    const applyTransform = () => {
+        wrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    };
+    
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        const rect = wrapper.getBoundingClientRect();
+        
+        // 10% de zoom in ou zoom out
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; 
+        let newScale = scale * zoomFactor;
+        newScale = Math.max(0.5, Math.min(newScale, 15)); // max 15x
+        
+        if(newScale === scale) return;
+        
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        const wrapperCenterX = rect.left + rect.width / 2;
+        const wrapperCenterY = rect.top + rect.height / 2;
+        
+        const dx = mouseX - wrapperCenterX;
+        const dy = mouseY - wrapperCenterY;
+        
+        // Compensa o deslocamento do zoom para dar zoom exatamente onde o mouse está
+        const deltaPanX = dx - (dx * (newScale / scale));
+        const deltaPanY = dy - (dy * (newScale / scale));
+        
+        panX += deltaPanX;
+        panY += deltaPanY;
+        scale = newScale;
+        
+        applyTransform();
+    }, { passive: false });
+    
+    container.addEventListener('mousedown', (e) => {
+        if (isSpaceDown || e.button === 1) { // Espaço ou Botão do meio
+            e.preventDefault();
+            isPanning = true;
+            window.isCanvasPanning = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            container.style.cursor = 'grabbing';
+        }
+    });
+    
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        applyTransform();
+    });
+    
+    window.addEventListener('mouseup', (e) => {
+        if (isPanning) {
+            isPanning = false;
+            window.isCanvasPanning = false;
+            container.style.cursor = window.isSpaceDown ? 'grab' : 'default';
+            if (canvasNoBg) canvasNoBg.style.cursor = window.isSpaceDown ? 'grab' : 'crosshair';
+        }
+    });
+
+
+    // Adiciona UI Hint para o usuário saber que existe Zoom
+    const hint = document.createElement('div');
+    hint.className = "absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-lg flex items-center gap-2 pointer-events-none z-50 shadow-lg";
+    hint.innerHTML = `
+        <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+        <span>Scroll para Zoom | Espaço + Drag para Mover</span>
+    `;
+    container.appendChild(hint);
 }
 
 window.setupRemoveBgVisualEditor = setupRemoveBgVisualEditor;

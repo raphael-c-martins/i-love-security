@@ -15,7 +15,7 @@ O sistema oferece uma suíte completa de ferramentas de manipulação de PDF e i
 
 - **PDF Master**: Juntar, dividir, comprimir e organizar páginas de PDF.
 - **Image Lab & IA**:
-    - **Removedor de Fundo IA**: Recorte cirúrgico de objetos via Inteligência Artificial (local/offline) com visualizador "Antes e Depois" e **Ferramenta de Edição Manual** (Pincel Mágico de Apagar/Restaurar com cursor visual de precisão).
+    - **Removedor de Fundo IA**: Recorte cirúrgico de objetos via Inteligência Artificial (local/offline) com visualizador "Antes e Depois" e **Modo Studio** (Edição manual via Pincel Mágico, Zoom de precisão até 15x e navegação via Espaço+Drag).
     - **Conversão em Lote**: Converter múltiplas imagens para JPG simultaneamente.
 - **TIF Suite**: Módulo dedicado para compressão inteligente e organização visual de arquivos TIF corporativos.
 - **Conversão Segura**: 

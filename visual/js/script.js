@@ -72,21 +72,43 @@ window.setMainCategory = function(category) {
     // Atualiza textos do Header
     const title = document.getElementById('main-title');
     const subtitle = document.getElementById('main-subtitle');
-    
-    if (category === "PDF") {
-        title.innerText = "Privacidade Total: Ferramentas Locais de PDF";
-        subtitle.innerText = "Seus dados nunca saem da sua máquina. Segurança e rapidez offline.";
-    } else if (category === "Imagens") {
+    const headerSection = document.getElementById('header-section');
+    const uploadContainer = document.getElementById('upload-container');
+
+    if (category === "Imagens") {
         title.innerText = "Estúdio Criativo: Manipulação de Imagens";
         subtitle.innerText = "Remova fundos e converta formatos com facilidade e sem limites.";
+    } else if (category === "PDF") {
+        title.innerText = "Privacidade Total: Ferramentas Locais de PDF";
+        subtitle.innerText = "Seus dados nunca saem da sua máquina. Segurança e rapidez offline.";
     } else if (category === "TIF") {
         title.innerText = "Ferramentas TIF de Alta Densidade";
         subtitle.innerText = "Comprima e manipule arquivos corporativos TIF localmente.";
     }
 
+    // Restaura layout padrão (cards)
+    if (headerSection) {
+        headerSection.classList.remove('hidden');
+        headerSection.classList.remove('pt-6', 'pb-4');
+        headerSection.classList.add('py-12');
+    }
+    if (title) title.classList.replace('mb-1', 'mb-4');
+    
+    if (uploadContainer) {
+        uploadContainer.classList.add('hidden');
+        uploadContainer.classList.replace('pb-6', 'pb-20');
+    }
+
+    const mainElement = document.querySelector('main');
+    if (mainElement) mainElement.classList.remove('hidden');
+    
+    const filters = document.querySelector('.flex.flex-wrap');
+    if (filters) filters.classList.remove('hidden');
+
     renderSubFilters(category);
-    filterTools('all'); // Reseta a grade
+    filterTools('all');
 }
+
 
 function renderSubFilters(mainCategory) {
     const container = document.getElementById('sub-filters');
@@ -173,6 +195,14 @@ function openUploadArea(tool) {
     container.classList.remove('hidden');
     container.className = "container mx-auto px-4 pb-20 max-w-4xl animate-fade-in";
 
+    // --- "Converter Imagem" → abre UI dedicada ANTES do HTML genérico ---
+    if (tool.title === "Converter Imagem") {
+        if (typeof setupConvertImageUI === 'function') {
+            setupConvertImageUI(); // UI com painel de formatos aparece imediatamente
+        }
+        return;
+    }
+
     container.innerHTML = `
         <button id="back-btn" class="mb-6 flex items-center text-gray-600 hover:text-red-600 transition-colors font-medium">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -210,15 +240,14 @@ function openUploadArea(tool) {
         </div>
     `;
 
-    // --- A MÁGICA DO FILTRO AQUI ---
+    // --- Filtro de tipo de arquivo ---
     const fileInput = document.getElementById('file-input');
 
-    // Se a ferramenta for especial (PDF <-> Imagem), aceita tudo
     if (tool.title === "PDF ↔ Imagem") {
         fileInput.setAttribute("accept", ".pdf,.jpg,.jpeg,.png,.webp");
     } else if (tool.title === "PDF ↔ Word") {
         fileInput.setAttribute("accept", ".pdf,.docx");
-    } else if (tool.title === "Remover Fundo" || tool.title === "Converter Imagem") {
+    } else if (tool.title === "Remover Fundo") {
         fileInput.setAttribute("accept", ".jpg,.jpeg,.png,.webp");
     } else if (tool.title === "Comprimir TIF" || tool.title === "Organizar TIF") {
         fileInput.setAttribute("accept", ".tif,.tiff");
@@ -329,6 +358,13 @@ window.handleFiles = function (files) {
     else if (toolTitle === "Remover Fundo" && selectedFiles.length > 0) {
         if (typeof setupRemoveBgVisualEditor === 'function') {
             setupRemoveBgVisualEditor(selectedFiles[0]);
+        }
+    }
+
+    // --- MÓDULO CONVERTER IMAGEM (caso cheguem via drag-and-drop na drop-zone genérica) ---
+    else if (toolTitle === "Converter Imagem" && selectedFiles.length > 0) {
+        if (typeof setupConvertImageUI === 'function') {
+            setupConvertImageUI([...selectedFiles]);
         }
     }
 

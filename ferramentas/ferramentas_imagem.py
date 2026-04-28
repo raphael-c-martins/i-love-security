@@ -6,46 +6,131 @@ import base64
 import zipfile
 from fastapi import APIRouter, UploadFile, File, Form, Response, BackgroundTasks
 from fastapi.responses import FileResponse
+from typing import List
 from PIL import Image
 from utils.logger import registrar_log
 
 router = APIRouter()
 
+# Mapeamento de extensão de saída → formato PIL e mime type
+_FORMAT_MAP = {
+    "jpg":  {"pil": "JPEG", "ext": "jpg",  "mime": "image/jpeg"},
+    "jpeg": {"pil": "JPEG", "ext": "jpg",  "mime": "image/jpeg"},
+    "png":  {"pil": "PNG",  "ext": "png",  "mime": "image/png"},
+    "webp": {"pil": "WEBP", "ext": "webp", "mime": "image/webp"},
+    "bmp":  {"pil": "BMP",  "ext": "bmp",  "mime": "image/bmp"},
+    "gif":  {"pil": "GIF",  "ext": "gif",  "mime": "image/gif"},
+    "tiff": {"pil": "TIFF", "ext": "tif",  "mime": "image/tiff"},
+    "tif":  {"pil": "TIFF", "ext": "tif",  "mime": "image/tiff"},
+}
+
 @router.post("/api/converter-imagem")
-async def converter_imagem(files: list[UploadFile] = File(...)):
-    """Converte imagens para JPG em lote e retorna um ZIP."""
+async def converter_imagem(
+    files: List[UploadFile] = File(...),
+    formato: str = Form(default="jpg")   # Formato de saída escolhido pelo usuário
+):
+    """Converte imagens em lote para o formato escolhido e retorna um ZIP."""
+    # Resolve o formato — fallback seguro para JPG se vier algo inválido
+    fmt_key  = formato.lower().strip()
+    fmt_info = _FORMAT_MAP.get(fmt_key, _FORMAT_MAP["jpg"])
+    pil_fmt  = fmt_info["pil"]   # ex: "JPEG", "PNG", "WEBP"
+    out_ext  = fmt_info["ext"]   # ex: "jpg", "png"
+
     out_buffer = io.BytesIO()
-    
+
     try:
         with zipfile.ZipFile(out_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for i, file_obj in enumerate(files):
+            # Variável para contar total de imagens geradas
+            total_imagens_geradas = 0
+            # Guardamos a última imagem salva caso seja apenas uma
+            ultima_imagem_nome = None
+            ultima_imagem_bytes = None
+
+            for file_obj in files:
                 original_name = file_obj.filename.rsplit('.', 1)[0]
                 content = await file_obj.read()
-                
+
                 try:
                     img = Image.open(io.BytesIO(content))
-                    if img.mode in ('RGBA', 'P', 'LA'):
-                        img = img.convert('RGB')
-                        
-                    img_buffer = io.BytesIO()
-                    img.save(img_buffer, "JPEG", quality=90)
                     
-                    zip_file.writestr(f"{original_name}_Convertido.jpg", img_buffer.getvalue())
+                    # Lógica para extrair todos os frames de TIF multi-página ou imagens animadas
+                    n_frames = getattr(img, 'n_frames', 1)
+                    frames = []
+                    
+                    # Se for GIF animado e estivermos convertendo pra GIF, não queremos quebrar frames, queremos salvar como está.
+                    # Mas se a conversão for para JPG/PNG etc, quebramos nos frames.
+                    if img.format == 'GIF' and pil_fmt == 'GIF':
+                        frames = [img] # Salva como único pra preservar animação se PIL deixar
+                    else:
+                        for i in range(n_frames):
+                            img.seek(i)
+                            frames.append(img.copy())
+
+                    for idx, frame in enumerate(frames):
+                        # Se tiver mais de um frame, adiciona o índice no nome
+                        sufixo = f"_{idx+1}" if n_frames > 1 else ""
+                        nome_arquivo_final = f"{original_name}_Convertido{sufixo}.{out_ext}"
+                        
+                        # Conversão de modo de cor
+                        if pil_fmt in ("PNG", "TIFF", "WEBP"):
+                            if frame.mode not in ("RGB", "RGBA", "L", "LA", "P"):
+                                frame = frame.convert("RGBA")
+                        elif pil_fmt == "GIF":
+                            frame = frame.convert("P")
+                        else:
+                            if frame.mode in ("RGBA", "P", "LA"):
+                                frame = frame.convert("RGB")
+
+                        img_buffer = io.BytesIO()
+
+                        # Parâmetros extras de qualidade por formato
+                        save_kwargs = {}
+                        if pil_fmt == "JPEG":
+                            save_kwargs["quality"] = 90
+                        elif pil_fmt == "WEBP":
+                            save_kwargs["quality"] = 88
+                        elif pil_fmt == "TIFF":
+                            save_kwargs["compression"] = "tiff_adobe_deflate"
+
+                        frame.save(img_buffer, pil_fmt, **save_kwargs)
+                        
+                        # Guarda dados para caso seja arquivo único
+                        img_bytes = img_buffer.getvalue()
+                        zip_file.writestr(nome_arquivo_final, img_bytes)
+                        
+                        total_imagens_geradas += 1
+                        ultima_imagem_nome = nome_arquivo_final
+                        ultima_imagem_bytes = img_bytes
+
                 except Exception as ex:
-                    print(f"Erro ao converter {file_obj.filename}: {ex}")
+                    print(f"[WARN] Erro ao converter '{file_obj.filename}': {ex}")
+
+        await registrar_log(
+            f"[SUCESSO] Conversão de {len(files)} imagem(ns) (Gerou {total_imagens_geradas} arquivos finais) para {pil_fmt}. "
+        )
+
+        # Se só gerou 1 imagem no total, não precisa de ZIP
+        if total_imagens_geradas == 1 and ultima_imagem_bytes:
+            return Response(
+                content=ultima_imagem_bytes,
+                media_type=fmt_info["mime"],
+                headers={
+                    "Content-Disposition": f'attachment; filename="{ultima_imagem_nome}"'
+                }
+            )
         
-        await registrar_log(f"[SUCESSO] Conversão de {len(files)} imagens para JPG.")
-        
+        # Caso contrário, retorna o ZIP completo
         return Response(
             content=out_buffer.getvalue(),
             media_type="application/zip",
             headers={
-                "Content-Disposition": "attachment; filename=Imagens_Convertidas.zip"
+                "Content-Disposition": f"attachment; filename=Imagens_Convertidas_{pil_fmt}.zip"
             }
         )
     except Exception as e:
         await registrar_log(f"[ERRO] Conversão de imagem falhou: {str(e)}")
-        return Response(content="Erro ao converter imagens", status_code=500)
+        return Response(content=f"Erro ao converter imagens: {str(e)}", status_code=500)
+
 
 @router.post("/api/comprimir-tif")
 async def comprimir_tif(files: list[UploadFile] = File(...)):
