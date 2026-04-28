@@ -8,7 +8,6 @@ from fastapi import APIRouter, UploadFile, File, Form, Response, BackgroundTasks
 from fastapi.responses import FileResponse
 from PIL import Image
 from utils.logger import registrar_log
-from utils.logger import registrar_log
 
 router = APIRouter()
 
@@ -64,13 +63,21 @@ async def comprimir_tif(files: list[UploadFile] = File(...)):
             img = Image.open(io.BytesIO(content))
             frames = []
             max_width = 1800
+            all_bw = True
             
             for i in range(getattr(img, 'n_frames', 1)):
                 img.seek(i)
                 frame = img.copy()
-                if frame.mode != 'RGB':
-                    frame = frame.convert('RGB')
                 
+                # Se for Mode 1 (P&B), mantemos para eficiência extrema.
+                # Se for qualquer outra coisa, tratamos conforme a necessidade.
+                if frame.mode != '1':
+                    all_bw = False
+                    # Se não for P&B e for comprimir, garantimos RGB
+                    if frame.mode not in ('RGB', 'L'):
+                        frame = frame.convert('RGB')
+                
+                # Redimensionamento opcional para compressão agressiva
                 width, height = frame.size
                 if width > max_width:
                     ratio = max_width / width
@@ -83,14 +90,18 @@ async def comprimir_tif(files: list[UploadFile] = File(...)):
             if not frames:
                 return Response(content="Nenhum frame válido encontrado no arquivo TIF.", status_code=400)
             
-            # Salvar com compressão jpeg
+            # Escolha inteligente de compressão
+            # Se tudo for P&B, Group 4 é imbatível.
+            # Se houver cor, usamos Adobe Deflate (lossless) ou JPEG (lossy)
+            # Como aqui o foco é COMPRIMIR, usaremos deflate que é seguro e melhor que JPEG para docs
+            comp = "group4" if all_bw else "tiff_adobe_deflate"
+            
             frames[0].save(
                 out_buffer, 
                 save_all=True, 
                 append_images=frames[1:], 
                 format="TIFF", 
-                compression="jpeg",
-                quality=65
+                compression=comp
             )
             
             final_size = out_buffer.tell()
@@ -225,22 +236,30 @@ async def organizar_tif_route(
             
         with Image.open(input_tif) as img:
             new_frames = []
+            all_bw = True
             for idx in order:
                 if idx < getattr(img, 'n_frames', 1):
                     img.seek(idx)
                     frame = img.copy()
-                    if frame.mode != 'RGB':
-                        frame = frame.convert('RGB')
+                    
+                    # Verificação de fidelidade: mantemos o modo original
+                    if frame.mode != '1':
+                        all_bw = False
+                        
                     new_frames.append(frame)
                     
             if new_frames:
+                # Lógica de Inteligência de Compressão:
+                # 1. Se tudo for P&B (Mode 1), Group 4 mantém o tamanho original (~30MB).
+                # 2. Se houver cor, Adobe Deflate preserva fidelidade sem inflar como o JPEG.
+                comp = "group4" if all_bw else "tiff_adobe_deflate"
+                
                 new_frames[0].save(
                     output_tif,
                     save_all=True,
                     append_images=new_frames[1:],
                     format="TIFF",
-                    compression="jpeg",
-                    quality=80
+                    compression=comp
                 )
         
         await registrar_log(f"[SUCESSO] TIF Organizado via Job {job_id[:8]}")

@@ -485,6 +485,5 @@ document.addEventListener('click', async (e) => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    setMainCategory("PDF");
-});
+// A inicialização agora é feita individualmente em cada página HTML
+// (index.html, imagens.html, tif.html) para garantir a categoria correta.

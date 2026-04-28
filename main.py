@@ -42,5 +42,15 @@ async def read_index():
     from fastapi.responses import FileResponse
     return FileResponse('index.html')
 
+@app.get("/imagens")
+async def read_imagens():
+    from fastapi.responses import FileResponse
+    return FileResponse('imagens.html')
+
+@app.get("/tif")
+async def read_tif():
+    from fastapi.responses import FileResponse
+    return FileResponse('tif.html')
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

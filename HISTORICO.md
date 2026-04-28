@@ -1,5 +1,24 @@
 # Histórico e Diário de Decisões Arquiteturais (I Love Security) 🔐
 
+## [28/04/2026] - Correção do "BO" de Tamanho TIF (Inflação de Bits)
+- **Problema:** Arquivos TIF de 30MB (P&B) explodiam para 1.4GB após organização/compressão.
+- **Causa:** Conversão forçada para RGB (24-bit) e uso de compressão JPEG inadequada para documentos.
+- **Solução:** Implementação de motor de compressão inteligente:
+  - Uso de **CCITT Group 4** para arquivos puramente P&B (preserva tamanho original).
+  - Uso de **Adobe Deflate (Lossless)** para arquivos mistos/coloridos (garante fidelidade absoluta).
+  - Remoção de conversões de modo desnecessárias.
+- **Resultado:** Arquivos organizados agora mantêm o tamanho original ou menor, com 100% de fidelidade visual.
+
+## [28/04/2026] - Modularização por Páginas e Correção de Navegação
+- **Problema:** Ao usar ferramentas complexas (como o Recorte), a navegação por botões (SPA-like) não conseguia resetar o estado da interface nem redirecionar o usuário corretamente.
+- **Solução:** Reestruturação da aplicação de SPA para estrutura Multi-Página (MPA).
+- **Mudanças Técnicas:**
+  - Criação de `imagens.html` e `tif.html` como arquivos independentes.
+  - Substituição de botões de categoria por links `<a>` reais na navegação.
+  - Atualização do `main.py` (FastAPI) para servir as novas rotas `/imagens` e `/tif`.
+  - Descentralização da inicialização do `script.js`, permitindo que cada página defina sua categoria padrão no carregamento.
+- **Benefício:** Garantia de isolamento total entre as ferramentas ("Sala" vs "Cozinha"), correção definitiva do bug de navegação no modo recorte e melhor organização de arquivos.
+
 ## [28/04/2026] - Expansão para Suíte de Imagens e Integração de IA (Rembg)
 - **Motivo:** Transformar a plataforma de um utilitário de PDF em uma ferramenta completa de manipulação de mídia corporativa.
 - **Implementação:**

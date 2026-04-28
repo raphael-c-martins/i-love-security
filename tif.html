@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I Love Security | Ferramentas Locais & Privadas</title>
+    <title>I Love Security | TIF</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -39,11 +39,11 @@
         <div class="hidden md:flex absolute inset-0 justify-center items-center pointer-events-none">
             <div class="flex gap-8 pointer-events-auto mt-2">
                 <a href="/" id="tab-PDF"
-                    class="main-tab font-bold text-red-600 border-b-2 border-red-600 pb-1 text-lg transition-colors">PDF</a>
+                    class="main-tab font-medium text-gray-500 hover:text-gray-800 pb-1 text-lg transition-colors border-b-2 border-transparent">PDF</a>
                 <a href="/imagens" id="tab-Imagens"
                     class="main-tab font-medium text-gray-500 hover:text-gray-800 pb-1 text-lg transition-colors border-b-2 border-transparent">Imagens</a>
                 <a href="/tif" id="tab-TIF"
-                    class="main-tab font-medium text-gray-500 hover:text-gray-800 pb-1 text-lg transition-colors border-b-2 border-transparent">TIF</a>
+                    class="main-tab font-bold text-red-600 border-b-2 border-red-600 pb-1 text-lg transition-colors">TIF</a>
             </div>
         </div>
 
@@ -53,10 +53,8 @@
     </nav>
 
     <section class="text-center py-12 px-4" id="header-section">
-        <h1 id="main-title" class="text-4xl font-bold text-gray-800 mb-4">Privacidade Total: Ferramentas Locais de PDF
-        </h1>
-        <p id="main-subtitle" class="text-lg text-gray-600">Seus dados nunca saem da sua máquina. Segurança e rapidez
-            offline.</p>
+        <h1 id="main-title" class="text-4xl font-bold text-gray-800 mb-4">Ferramentas TIF de Alta Densidade</h1>
+        <p id="main-subtitle" class="text-lg text-gray-600">Comprima e manipule arquivos corporativos TIF localmente.</p>
 
         <div id="sub-filters" class="flex flex-wrap justify-center gap-2 mt-8">
             <!-- Botões de filtro gerados dinamicamente via JS -->
@@ -65,13 +63,7 @@
 
     <main class="container mx-auto px-4 pb-20">
         <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <!-- Card Organizar PDF (SERÁ INSERIDO DINAMICAMENTE PELO SCRIPT.JS OU HARDCODED AQUI) -->
-            <!-- Vamos deixar o script.js renderizar os cards baseados na config, 
-                 mas caso a config dependa de HTML existente, precisamos garantir.
-                 Na estrutura atual do script.js (vendo o arquivo original no dump anterior),
-                 parece que ele renderiza *dentro* do #tools-grid. 
-                 Vou verificar o script.js antes de alterar o HTML dos cards, 
-                 mas vou adicionar o tag <script> do novo módulo no final. -->
+            <!-- Cards de TIF serão inseridos aqui pelo script.js -->
         </div>
     </main>
 
@@ -129,7 +121,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof setMainCategory === 'function') {
-                setMainCategory("PDF");
+                setMainCategory("TIF");
             }
         });
     </script>
