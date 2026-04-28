@@ -2,16 +2,26 @@
 
 // --- CONFIGURAÇÃO ---
 const tools = [
-    { title: "Organizar PDF", category: "organizar", desc: "Reordene as páginas do seu PDF visualmente ou remova páginas indesejadas.", iconColor: "text-purple-600", bgColor: "bg-purple-100", iconPath: "M4 6h16M4 10h16M4 14h16M4 18h16" },
-    { title: "Juntar PDF", category: "organizar", desc: "Combine múltiplos arquivos PDF em um único documento, na ordem que preferir.", iconColor: "text-red-600", bgColor: "bg-red-100", iconPath: "M4 7l8-4 8 4-8 4-8-4zm0 5l8 4 8-4m-16 5l8 4 8-4" },
-    { title: "Dividir PDF", category: "organizar", desc: "Extraia páginas específicas ou divida um documento em vários arquivos menores.", iconColor: "text-orange-600", bgColor: "bg-orange-100", iconPath: "M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" },
-    { title: "Comprimir PDF", category: "otimizar", desc: "Reduza o tamanho do arquivo PDF mantendo a qualidade visual para envio fácil.", iconColor: "text-green-600", bgColor: "bg-green-100", iconPath: "M19 14l-7 7m0 0l-7-7m7 7V3" },
-    { title: "PDF ↔ Imagem", category: "converter", desc: "Converta páginas de PDF em imagens ou crie PDFs a partir de suas fotos e scans.", iconColor: "text-purple-600", bgColor: "bg-purple-100", iconPath: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" },
-    { title: "PDF ↔ Word", category: "converter", desc: "Converta documentos PDF para Word (DOCX) e edite o texto livremente.", iconColor: "text-blue-700", bgColor: "bg-blue-50", iconPath: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" }
+    // PDF
+    { main: "PDF", title: "Organizar PDF", category: "organizar", desc: "Reordene as páginas do seu PDF visualmente ou remova páginas indesejadas.", iconColor: "text-purple-600", bgColor: "bg-purple-100", iconPath: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+    { main: "PDF", title: "Juntar PDF", category: "organizar", desc: "Combine múltiplos arquivos PDF em um único documento, na ordem que preferir.", iconColor: "text-red-600", bgColor: "bg-red-100", iconPath: "M4 7l8-4 8 4-8 4-8-4zm0 5l8 4 8-4m-16 5l8 4 8-4" },
+    { main: "PDF", title: "Dividir PDF", category: "organizar", desc: "Extraia páginas específicas ou divida um documento em vários arquivos menores.", iconColor: "text-orange-600", bgColor: "bg-orange-100", iconPath: "M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" },
+    { main: "PDF", title: "Comprimir PDF", category: "otimizar", desc: "Reduza o tamanho do arquivo PDF mantendo a qualidade visual para envio fácil.", iconColor: "text-green-600", bgColor: "bg-green-100", iconPath: "M19 14l-7 7m0 0l-7-7m7 7V3" },
+    { main: "PDF", title: "PDF ↔ Imagem", category: "converter", desc: "Converta páginas de PDF em imagens ou crie PDFs a partir de suas fotos e scans.", iconColor: "text-purple-600", bgColor: "bg-purple-100", iconPath: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { main: "PDF", title: "PDF ↔ Word", category: "converter", desc: "Converta documentos PDF para Word (DOCX) e edite o texto livremente.", iconColor: "text-blue-700", bgColor: "bg-blue-50", iconPath: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+    
+    // Imagens
+    { main: "Imagens", title: "Remover Fundo", category: "edicao", desc: "Remova automaticamente o fundo de suas imagens PNG/JPG.", iconColor: "text-pink-600", bgColor: "bg-pink-100", iconPath: "M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" },
+    { main: "Imagens", title: "Converter Imagem", category: "converter", desc: "Converta imagens em lote para diversos formatos.", iconColor: "text-indigo-600", bgColor: "bg-indigo-100", iconPath: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" },
+
+    // TIF
+    { main: "TIF", title: "Organizar TIF", category: "organizar", desc: "Reordene visualmente as páginas de arquivos TIF e exclua frames.", iconColor: "text-teal-600", bgColor: "bg-teal-100", iconPath: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+    { main: "TIF", title: "Comprimir TIF", category: "otimizar", desc: "Reduza drasticamente o tamanho de arquivos TIF multipágina.", iconColor: "text-teal-600", bgColor: "bg-teal-100", iconPath: "M19 14l-7 7m0 0l-7-7m7 7V3" }
 ];
 
 let selectedFiles = [];
 let currentTool = null;
+let currentMainCategory = "PDF";
 
 // --- FUNÇÃO TOAST ---
 window.showToast = function (message, type = 'success') {
@@ -44,6 +54,75 @@ function getFormattedDate() {
 }
 
 // --- RENDERIZAÇÃO ---
+window.setMainCategory = function(category) {
+    currentMainCategory = category;
+    
+    // Atualiza estilo das abas
+    document.querySelectorAll('.main-tab').forEach(tab => {
+        tab.classList.remove('font-bold', 'text-red-600', 'border-red-600');
+        tab.classList.add('font-medium', 'text-gray-500', 'border-transparent');
+    });
+    
+    const activeTab = document.getElementById(`tab-${category}`);
+    if(activeTab) {
+        activeTab.classList.remove('font-medium', 'text-gray-500', 'border-transparent');
+        activeTab.classList.add('font-bold', 'text-red-600', 'border-red-600');
+    }
+
+    // Atualiza textos do Header
+    const title = document.getElementById('main-title');
+    const subtitle = document.getElementById('main-subtitle');
+    
+    if (category === "PDF") {
+        title.innerText = "Privacidade Total: Ferramentas Locais de PDF";
+        subtitle.innerText = "Seus dados nunca saem da sua máquina. Segurança e rapidez offline.";
+    } else if (category === "Imagens") {
+        title.innerText = "Estúdio Criativo: Manipulação de Imagens";
+        subtitle.innerText = "Remova fundos e converta formatos com facilidade e sem limites.";
+    } else if (category === "TIF") {
+        title.innerText = "Ferramentas TIF de Alta Densidade";
+        subtitle.innerText = "Comprima e manipule arquivos corporativos TIF localmente.";
+    }
+
+    renderSubFilters(category);
+    filterTools('all'); // Reseta a grade
+}
+
+function renderSubFilters(mainCategory) {
+    const container = document.getElementById('sub-filters');
+    if(!container) return;
+    container.innerHTML = '';
+    
+    const relevantTools = tools.filter(t => t.main === mainCategory);
+    const categories = new Set(relevantTools.map(t => t.category));
+    
+    // Botão "Todas"
+    const btnAll = document.createElement('button');
+    btnAll.onclick = () => filterTools('all');
+    btnAll.className = "filter-btn bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 transition-colors";
+    btnAll.innerText = "Todas";
+    btnAll.dataset.category = "all";
+    container.appendChild(btnAll);
+
+    // Dicionário de labels bonitos
+    const labels = {
+        'organizar': 'Organizar',
+        'otimizar': 'Otimizar',
+        'converter': 'Converter',
+        'seguranca': 'Segurança',
+        'edicao': 'Edição'
+    };
+
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.onclick = () => filterTools(cat);
+        btn.className = "filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors";
+        btn.innerText = labels[cat] || cat;
+        btn.dataset.category = cat;
+        container.appendChild(btn);
+    });
+}
+
 function renderTools(toolsToDisplay = tools) {
     const grid = document.getElementById('tools-grid');
     if (!grid) return;
@@ -66,15 +145,19 @@ function renderTools(toolsToDisplay = tools) {
     });
 }
 
-function filterTools(category) {
+window.filterTools = function(category) {
     document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('bg-gray-800', 'text-white');
-        btn.classList.add('bg-white', 'text-gray-600');
+        if (btn.dataset.category === category) {
+            btn.classList.remove('bg-white', 'text-gray-600');
+            btn.classList.add('bg-gray-800', 'text-white');
+        } else {
+            btn.classList.remove('bg-gray-800', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-600');
+        }
     });
-    event.target.classList.remove('bg-white', 'text-gray-600');
-    event.target.classList.add('bg-gray-800', 'text-white');
 
-    const filtered = category === 'all' ? tools : tools.filter(t => t.category === category);
+    const relevant = tools.filter(t => t.main === currentMainCategory);
+    const filtered = category === 'all' ? relevant : relevant.filter(t => t.category === category);
     renderTools(filtered);
 }
 
@@ -132,9 +215,13 @@ function openUploadArea(tool) {
 
     // Se a ferramenta for especial (PDF <-> Imagem), aceita tudo
     if (tool.title === "PDF ↔ Imagem") {
-        fileInput.setAttribute("accept", ".pdf,.jpg,.jpeg,.png");
+        fileInput.setAttribute("accept", ".pdf,.jpg,.jpeg,.png,.webp");
     } else if (tool.title === "PDF ↔ Word") {
         fileInput.setAttribute("accept", ".pdf,.docx");
+    } else if (tool.title === "Remover Fundo" || tool.title === "Converter Imagem") {
+        fileInput.setAttribute("accept", ".jpg,.jpeg,.png,.webp");
+    } else if (tool.title === "Comprimir TIF" || tool.title === "Organizar TIF") {
+        fileInput.setAttribute("accept", ".tif,.tiff");
     } else {
         fileInput.setAttribute("accept", ".pdf");
     }
@@ -173,17 +260,23 @@ window.handleFiles = function (files) {
 
     for (let file of files) {
         // Validação extra via JS caso o usuário arraste arquivo errado
-        const isImage = file.type.startsWith('image/');
+        const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp)$/i);
+        const isTif = file.name.match(/\.(tif|tiff)$/i);
         const isPdf = file.type === "application/pdf";
 
         if (toolTitle === "PDF ↔ Imagem") {
             if (isImage || isPdf) selectedFiles.push(file);
             else window.showToast(`Arquivo ${file.name} ignorado. Apenas PDF ou Imagens.`, 'error');
         } else if (toolTitle === "PDF ↔ Word") {
-            // Aceita PDF ou DOCX (simplificado aqui, validação real no UI)
             const isDocx = file.name.toLowerCase().endsWith('.docx');
             if (isPdf || isDocx) selectedFiles.push(file);
             else window.showToast(`Arquivo ${file.name} ignorado. Apenas PDF ou DOCX.`, 'error');
+        } else if (toolTitle === "Remover Fundo" || toolTitle === "Converter Imagem") {
+            if (isImage) selectedFiles.push(file);
+            else window.showToast(`Arquivo ${file.name} ignorado. Apenas Imagens.`, 'error');
+        } else if (toolTitle === "Comprimir TIF" || toolTitle === "Organizar TIF") {
+            if (isTif) selectedFiles.push(file);
+            else window.showToast(`Arquivo ${file.name} ignorado. Apenas TIF/TIFF.`, 'error');
         } else {
             if (isPdf) selectedFiles.push(file);
             else window.showToast(`Arquivo ${file.name} ignorado. Apenas PDF.`, 'error');
@@ -222,6 +315,20 @@ window.handleFiles = function (files) {
     else if (toolTitle === "Organizar PDF" && selectedFiles.length > 0) {
         if (typeof setupOrganizeVisualEditor === 'function') {
             setupOrganizeVisualEditor(selectedFiles[0]); // Manda só o primeiro por enquanto
+        }
+    }
+
+    // --- NOVO MÓDULO TIF ORGANIZAR ---
+    else if (toolTitle === "Organizar TIF" && selectedFiles.length > 0) {
+        if (typeof setupOrganizeTifVisualEditor === 'function') {
+            setupOrganizeTifVisualEditor(selectedFiles[0]);
+        }
+    }
+
+    // --- NOVO MÓDULO REMOVER FUNDO ---
+    else if (toolTitle === "Remover Fundo" && selectedFiles.length > 0) {
+        if (typeof setupRemoveBgVisualEditor === 'function') {
+            setupRemoveBgVisualEditor(selectedFiles[0]);
         }
     }
 
@@ -277,6 +384,9 @@ document.addEventListener('click', async (e) => {
         else if (toolTitle === "PDF para JPG") endpoint = "/api/pdf-para-jpg";
         else if (toolTitle === "JPG para PDF") endpoint = "/api/jpg-para-pdf";
         else if (toolTitle === "PDF para Word") endpoint = "/api/pdf-para-word";
+        else if (toolTitle === "Remover Fundo") endpoint = "/api/remover-fundo";
+        else if (toolTitle === "Converter Imagem") endpoint = "/api/converter-imagem";
+        else if (toolTitle === "Comprimir TIF") endpoint = "/api/comprimir-tif";
 
         const formData = new FormData();
         selectedFiles.forEach(file => formData.append("files", file));
@@ -296,7 +406,7 @@ document.addEventListener('click', async (e) => {
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             };
 
-            const response = await fetch(`/api/${apiEndpoint}`, {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
             });
@@ -322,14 +432,27 @@ document.addEventListener('click', async (e) => {
                 a.href = url;
 
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                let originalName = selectedFiles[0].name.replace('.pdf', '');
+                let originalName = selectedFiles[0].name.replace(/\.[^/.]+$/, ""); // Remove qualquer extensão
+                let downloadFilename = `Resultado_${timestamp}.zip`;
 
-                // Define o nome do arquivo baseado na ferramenta
-                if (toolTitle === "Juntar PDF") a.download = `Junto_${timestamp}.pdf`;
-                else if (toolTitle === "Dividir PDF") a.download = `${originalName}_Dividido_${timestamp}.zip`;
-                else if (toolTitle === "Comprimir PDF") a.download = `${originalName}_Otimizado.pdf`;
-                else if (toolTitle.includes("Word")) a.download = `${originalName}.docx`;
-                else a.download = `Resultado_${timestamp}.zip`;
+                // Tenta extrair o nome original enviado pelo Backend via Content-Disposition
+                const contentDisposition = response.headers.get('Content-Disposition');
+                if (contentDisposition && contentDisposition.includes('filename=')) {
+                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (match && match[1]) {
+                        downloadFilename = match[1];
+                    }
+                } else {
+                    // Fallback local baseado na ferramenta
+                    if (toolTitle === "Juntar PDF") downloadFilename = `Junto_${timestamp}.pdf`;
+                    else if (toolTitle === "Dividir PDF") downloadFilename = `${originalName}_Dividido_${timestamp}.zip`;
+                    else if (toolTitle === "Comprimir PDF") downloadFilename = `${originalName}_Otimizado.pdf`;
+                    else if (toolTitle.includes("Word")) downloadFilename = `${originalName}.docx`;
+                    else if (toolTitle === "Remover Fundo") downloadFilename = `${originalName}_Sem_Fundo.png`;
+                    else if (toolTitle === "Comprimir TIF" && selectedFiles.length === 1) downloadFilename = `${originalName}_Comprimido.tif`;
+                }
+
+                a.download = downloadFilename;
 
                 document.body.appendChild(a);
                 a.click();
@@ -363,5 +486,5 @@ document.addEventListener('click', async (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    renderTools();
+    setMainCategory("PDF");
 });

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # IMPORTAÇÃO CORRIGIDA (Usando underlines em vez de hífens)
-from ferramentas import juntar_pdf, dividir_pdf, comprimir_pdf, conversao_img, conversao_word, organizar_pdf
+from ferramentas import juntar_pdf, dividir_pdf, comprimir_pdf, conversao_img, conversao_word, organizar_pdf, remover_fundo, ferramentas_imagem
 
 app = FastAPI()
 
@@ -34,6 +34,8 @@ app.include_router(comprimir_pdf.router)
 app.include_router(conversao_img.router)
 app.include_router(conversao_word.router)
 app.include_router(organizar_pdf.router)
+app.include_router(remover_fundo.router)
+app.include_router(ferramentas_imagem.router)
 
 @app.get("/")
 async def read_index():

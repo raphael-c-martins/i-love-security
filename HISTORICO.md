@@ -1,5 +1,18 @@
 # Histórico e Diário de Decisões Arquiteturais (I Love Security) 🔐
 
+## [28/04/2026] - Expansão para Suíte de Imagens e Integração de IA (Rembg)
+- **Motivo:** Transformar a plataforma de um utilitário de PDF em uma ferramenta completa de manipulação de mídia corporativa.
+- **Implementação:**
+  1. **Navegação por Categorias:** Refatoração do Header para permitir navegação entre contextos (PDF, Imagens, TIF).
+  2. **Removedor de Fundo IA:** Integração da biblioteca `rembg` (U-2-Net) para remoção de fundos 100% offline.
+  3. **Visualizador Antes/Depois:** Implementada UI interativa com slider (CSS `clip-path`) para comparação em tempo real.
+  4. **Pincel Mágico (Edição Manual):** Desenvolvimento de engine baseada em Canvas HTML5 para restauração e apagamento manual de pixels:
+     - **Modo Restaurar:** Utiliza padrão de textura da imagem original para recuperar áreas perdidas.
+     - **Cursor de Precisão:** Implementação de cursor visual dinâmico que reflete o tamanho e posição real do pincel.
+  5. **TIF Corporativo:** Adicionadas ferramentas de compressão e organizador visual de páginas para arquivos TIF densos.
+  6. **Correção de UI:** Resolvidos bugs de persistência visual nos filtros e alinhamento de imagens no slider.
+- **Resultado:** O projeto agora é uma suíte de ferramentas multimídia robusta, mantendo a privacidade absoluta.
+
 ## [27/04/2026] - Implementação de Sistema de Auditoria e Logs (HA)
 - **Motivo:** Necessidade de rastreabilidade de todas as operações críticas processadas pelos usuários.
 - **Implementação:**

@@ -14,6 +14,10 @@ O foco deste projeto é rodar exclusivamente dentro da infraestrutura da sua emp
 O sistema oferece uma suíte completa de ferramentas de manipulação de PDF e imagens:
 
 - **PDF Master**: Juntar, dividir, comprimir e organizar páginas de PDF.
+- **Image Lab & IA**:
+    - **Removedor de Fundo IA**: Recorte cirúrgico de objetos via Inteligência Artificial (local/offline) com visualizador "Antes e Depois" e **Ferramenta de Edição Manual** (Pincel Mágico de Apagar/Restaurar com cursor visual de precisão).
+    - **Conversão em Lote**: Converter múltiplas imagens para JPG simultaneamente.
+- **TIF Suite**: Módulo dedicado para compressão inteligente e organização visual de arquivos TIF corporativos.
 - **Conversão Segura**: 
     - PDF para Imagem (JPG/PNG) e vice-versa.
     - PDF para Word e Word para PDF (via processamento local).
@@ -29,9 +33,18 @@ A arquitetura foi desenhada seguindo princípios de **Engenharia de SRE** e **Al
 
 ## 🛠 Como Executar (Modo On-Premise)
 
+### 1. Pré-requisitos
+- **Python 3.10+**: Certifique-se de ter o Python instalado.
+- **Bibliotecas**: O sistema utiliza IA local. Para instalar todas as dependências de uma vez, abra o terminal na pasta do projeto e rode:
+  ```bash
+  python -m pip install --upgrade pip
+  pip install -r requirements.txt
+  ```
+
+### 2. Ativação
 A aplicação foi projetada para rodar em background (servidor invisível), garantindo que a ferramenta esteja sempre disponível sem atrapalhar o fluxo de trabalho.
 
-1. **Ativação**: Execute o arquivo `iniciar_sistema.bat`.
+1. **Start**: Execute o arquivo `iniciar_sistema.bat`.
 2. **Descoberta Inteligente**: O sistema detecta automaticamente o IP da sua rede local (LAN), permitindo que outros colegas acessem a ferramenta via intranet.
 3. **Acesso**: 
    - Local: `http://localhost:8001`

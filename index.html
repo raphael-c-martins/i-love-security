@@ -26,8 +26,8 @@
 
 <body class="bg-gray-50 font-sans">
 
-    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <a href="/" class="flex items-center gap-3 hover:opacity-75 transition-opacity cursor-pointer">
+    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center relative">
+        <a href="/" class="flex items-center gap-3 hover:opacity-75 transition-opacity cursor-pointer z-10">
             <img src="/visual/img/logo.png" alt="I Love Security Logo" class="h-12 w-auto object-contain">
 
             <span class="text-xl font-bold text-gray-800 uppercase tracking-tighter">
@@ -35,26 +35,31 @@
             </span>
         </a>
 
-        <div class="text-sm text-gray-500 font-medium">
-            Ambiente Interno - LGPD Safe
+        <!-- Categorias Principais Centralizadas -->
+        <div class="hidden md:flex absolute inset-0 justify-center items-center pointer-events-none">
+            <div class="flex gap-8 pointer-events-auto mt-2">
+                <button onclick="setMainCategory('PDF')" id="tab-PDF"
+                    class="main-tab font-bold text-red-600 border-b-2 border-red-600 pb-1 text-lg transition-colors">PDF</button>
+                <button onclick="setMainCategory('Imagens')" id="tab-Imagens"
+                    class="main-tab font-medium text-gray-500 hover:text-gray-800 pb-1 text-lg transition-colors border-b-2 border-transparent">Imagens</button>
+                <button onclick="setMainCategory('TIF')" id="tab-TIF"
+                    class="main-tab font-medium text-gray-500 hover:text-gray-800 pb-1 text-lg transition-colors border-b-2 border-transparent">TIF</button>
+            </div>
+        </div>
+
+        <div class="text-sm text-gray-500 font-medium z-10">
+            Ambiente Interno
         </div>
     </nav>
 
-    <section class="text-center py-12 px-4">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">Privacidade Total: Ferramentas Locais de PDF</h1>
-        <p class="text-lg text-gray-600">Seus dados nunca saem da sua máquina. Segurança e rapidez offline.</p>
+    <section class="text-center py-12 px-4" id="header-section">
+        <h1 id="main-title" class="text-4xl font-bold text-gray-800 mb-4">Privacidade Total: Ferramentas Locais de PDF
+        </h1>
+        <p id="main-subtitle" class="text-lg text-gray-600">Seus dados nunca saem da sua máquina. Segurança e rapidez
+            offline.</p>
 
-        <div class="flex flex-wrap justify-center gap-2 mt-8">
-            <button onclick="filterTools('all')"
-                class="filter-btn bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-700 transition-colors">Todas</button>
-            <button onclick="filterTools('organizar')"
-                class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">Organizar</button>
-            <button onclick="filterTools('otimizar')"
-                class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">Otimizar</button>
-            <button onclick="filterTools('converter')"
-                class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">Converter</button>
-            <button onclick="filterTools('seguranca')"
-                class="filter-btn bg-white text-gray-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">Segurança</button>
+        <div id="sub-filters" class="flex flex-wrap justify-center gap-2 mt-8">
+            <!-- Botões de filtro gerados dinamicamente via JS -->
         </div>
     </section>
 
@@ -119,6 +124,8 @@
     <script src="/visual/js/modules/image_ui.js"></script>
     <script src="/visual/js/modules/word_ui.js"></script>
     <script src="/visual/js/modules/organize_ui.js"></script>
+    <script src="/visual/js/modules/organize_tif_ui.js"></script>
+    <script src="/visual/js/modules/remove_bg_ui.js"></script>
 </body>
 
 </html>
