@@ -16,43 +16,84 @@ async def pdf_para_imagem(
     files: List[UploadFile], 
     formato: str = Form(default="jpg") # jpg, png, webp
 ):
-    out_buffer = io.BytesIO()
-    file_obj = files[0]
-    original_name = file_obj.filename.replace(".pdf", "")
-    
-    content = await file_obj.read()
-    doc = fitz.open(stream=content, filetype="pdf")
-
-    # Mapeamento de formatos para PyMuPDF
-    fmt = formato.lower()
-    if fmt not in ["jpg", "jpeg", "png", "webp"]:
+    # Mapeamento de formatos e MIME types
+    fmt = formato.lower().strip()
+    if fmt not in ["jpg", "jpeg", "webp"]:
         fmt = "jpg"
+    
+    mime_types = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "webp": "image/webp"
+    }
+    mime_type = mime_types.get(fmt, "image/jpeg")
     
     # Ajustes de qualidade
     jpg_quality = 85 if fmt in ["jpg", "jpeg"] else None
-
-    with zipfile.ZipFile(out_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for i, page in enumerate(doc):
-            # DPI 150 = Boa qualidade visual e tamanho decente
-            pix = page.get_pixmap(dpi=150, alpha=(fmt=="png")) # Alpha channel para PNG
-            
-            if fmt in ["jpg", "jpeg"]:
-                img_data = pix.tobytes("jpg", jpg_quality=jpg_quality)
-            else:
-                img_data = pix.tobytes(fmt)
-                
-            zip_file.writestr(f"{original_name}_pag_{i+1}.{fmt}", img_data)
-
-    doc.close()
     
-    # Registro de log para auditoria
-    await registrar_log(f"Converteu PDF '{original_name}.pdf' para imagens ({formato.upper()})")
+    # Lista para armazenar as imagens geradas: (nome_arquivo, bytes)
+    imagens_geradas = []
+    nomes_pdfs_processados = []
 
-    return Response(
-        content=out_buffer.getvalue(),
-        media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=Imagens_{original_name}.zip"}
-    )
+    for file_obj in files:
+        original_filename = file_obj.filename
+        nomes_pdfs_processados.append(original_filename)
+        base_name = os.path.splitext(original_filename)[0]
+        
+        content = await file_obj.read()
+        try:
+            doc = fitz.open(stream=content, filetype="pdf")
+            
+            for i, page in enumerate(doc):
+                # DPI 150 = Boa qualidade visual e tamanho decente
+                pix = page.get_pixmap(dpi=150, alpha=False)
+                
+                if fmt in ["jpg", "jpeg"]:
+                    img_data = pix.tobytes("jpg", jpg_quality=jpg_quality)
+                else:
+                    img_data = pix.tobytes(fmt)
+                
+                # Se for apenas 1 página e apenas 1 arquivo, o nome é limpo.
+                # Se tiver mais páginas ou mais arquivos, adicionamos contexto ao nome.
+                if len(files) == 1 and doc.page_count == 1:
+                    nome_final = f"{base_name}.{fmt}"
+                else:
+                    # Se o PDF tem múltiplas páginas, indica a página
+                    sufixo_pag = f"_pag_{i+1}" if doc.page_count > 1 else ""
+                    nome_final = f"{base_name}{sufixo_pag}.{fmt}"
+                
+                imagens_geradas.append((nome_final, img_data))
+            
+            doc.close()
+        except Exception as e:
+            await registrar_log(f"[ERRO] Falha ao ler PDF '{original_filename}': {str(e)}")
+
+    # Registro de log consolidado
+    await registrar_log(f"Converteu {len(files)} PDF(s) ({', '.join(nomes_pdfs_processados)}) para {len(imagens_geradas)} imagens {fmt.upper()}")
+
+    # Decisão de Retorno: Arquivo Único vs ZIP
+    if len(imagens_geradas) == 1:
+        nome_arquivo, dados = imagens_geradas[0]
+        return Response(
+            content=dados,
+            media_type=mime_type,
+            headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'}
+        )
+    else:
+        # Se houver mais de uma imagem, retorna um ZIP
+        out_buffer = io.BytesIO()
+        with zipfile.ZipFile(out_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for nome, dados in imagens_geradas:
+                zip_file.writestr(nome, dados)
+        
+        # Nome do ZIP baseado no primeiro arquivo ou genérico
+        zip_name = f"Imagens_{os.path.splitext(files[0].filename)[0]}.zip" if len(files) == 1 else "Imagens_Convertidas.zip"
+        
+        return Response(
+            content=out_buffer.getvalue(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={zip_name}"}
+        )
 
 # --- ROTA REMOVIDA: PDF PARA WORD (Movida para conversao_word.py) ---
 # O código antigo foi removido para evitar conflitos de rota.

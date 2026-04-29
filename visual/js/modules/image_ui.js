@@ -13,7 +13,7 @@ async function setupImageConverterVisualEditor(files) {
     }
 
     uploadContainer.innerHTML = '';
-    uploadContainer.className = "w-full max-w-5xl mx-auto py-8 animate-fade-in";
+    uploadContainer.className = "w-full max-w-7xl mx-auto py-8 animate-fade-in";
 
     // Cria a estrutura visual
     const editor = document.createElement('div');
@@ -57,11 +57,7 @@ async function setupImageConverterVisualEditor(files) {
                 <div class="flex gap-4">
                     <label class="cursor-pointer">
                         <input type="radio" name="img_format" value="jpg" checked class="peer sr-only">
-                        <div class="px-4 py-2 rounded-lg border border-gray-200 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 text-gray-600 hover:bg-gray-50 transition">JPG</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="img_format" value="png" class="peer sr-only">
-                        <div class="px-4 py-2 rounded-lg border border-gray-200 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 text-gray-600 hover:bg-gray-50 transition">PNG (Transp.)</div>
+                        <div class="px-4 py-2 rounded-lg border border-gray-200 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 text-gray-600 hover:bg-gray-50 transition">JPEG/JPG</div>
                     </label>
                     <label class="cursor-pointer">
                         <input type="radio" name="img_format" value="webp" class="peer sr-only">
@@ -76,7 +72,7 @@ async function setupImageConverterVisualEditor(files) {
                  <button id="btn-add-more" class="text-sm text-blue-600 hover:underline font-medium">+ Adicionar</button>
             </div>
             
-            <div id="files-display-area" class="w-full grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-h-[300px] overflow-y-auto pr-1">
+            <div id="files-display-area" class="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-8 max-h-[400px] overflow-y-auto pr-2">
                 <!-- Arquivos aparecem aqui via JS -->
             </div>
 
@@ -215,13 +211,52 @@ async function setupImageConverterVisualEditor(files) {
         filesArea.innerHTML = '';
         currentFiles.forEach((file, idx) => {
             const div = document.createElement('div');
-            div.className = "relative bg-gray-50 border border-gray-200 p-3 rounded-lg flex flex-col items-center group overflow-hidden";
+            div.className = "relative bg-white border border-gray-200 p-2 rounded-xl flex flex-col items-center group overflow-hidden shadow-sm hover:border-blue-300 transition-all";
+            
+            // Container da miniatura
+            const thumbId = `thumb-pdf-${idx}`;
             div.innerHTML = `
-                <button onclick="removeImageFile(${idx})" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10">✕</button>
-                <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center mb-1 text-gray-500 text-xs font-bold uppercase">${file.name.split('.').pop()}</div>
-                <span class="text-xs font-medium text-gray-700 truncate w-full text-center" title="${file.name}">${file.name}</span>
+                <button onclick="removeImageFile(${idx})" 
+                        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md">✕</button>
+                
+                <div class="w-full aspect-[3/4] bg-gray-50 rounded-lg flex items-center justify-center mb-2 overflow-hidden relative border border-gray-100">
+                    <canvas id="${thumbId}" class="w-full h-full object-cover hidden"></canvas>
+                    <div id="${thumbId}-loader" class="absolute inset-0 flex items-center justify-center bg-gray-50">
+                        <div class="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                    <div id="${thumbId}-error" class="hidden flex flex-col items-center text-gray-300">
+                         <span class="text-xs font-bold uppercase">${file.name.split('.').pop()}</span>
+                    </div>
+                </div>
+                
+                <span class="text-[10px] font-bold text-gray-600 truncate w-full text-center px-1" title="${file.name}">${file.name}</span>
             `;
             filesArea.appendChild(div);
+
+            // Gera a miniatura de forma assíncrona
+            if (file.type === 'application/pdf') {
+                generatePDFThumbnail(file, thumbId);
+            } else if (file.type.startsWith('image/')) {
+                // Se for imagem (modo img-to-pdf)
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const canvas = document.getElementById(thumbId);
+                    const loader = document.getElementById(`${thumbId}-loader`);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        const img = new Image();
+                        img.onload = () => {
+                            canvas.width = 150;
+                            canvas.height = 200;
+                            ctx.drawImage(img, 0, 0, 150, 200);
+                            canvas.classList.remove('hidden');
+                            loader.classList.add('hidden');
+                        };
+                        img.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
         // Validação de botão
@@ -231,6 +266,36 @@ async function setupImageConverterVisualEditor(files) {
         } else {
             processBtn.disabled = false;
             processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    /**
+     * Gera uma miniatura da primeira página de um PDF
+     */
+    async function generatePDFThumbnail(file, canvasId) {
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1);
+            
+            const canvas = document.getElementById(canvasId);
+            const loader = document.getElementById(`${canvasId}-loader`);
+            if (!canvas) return;
+
+            const viewport = page.getViewport({ scale: 0.3 });
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            canvas.classList.remove('hidden');
+            loader.classList.add('hidden');
+        } catch (e) {
+            console.error("Erro thumbnail PDF:", e);
+            const loader = document.getElementById(`${canvasId}-loader`);
+            const error = document.getElementById(`${canvasId}-error`);
+            if (loader) loader.classList.add('hidden');
+            if (error) error.classList.remove('hidden');
         }
     }
 
@@ -326,12 +391,19 @@ async function setupImageConverterVisualEditor(files) {
                 a.style.display = 'none';
                 a.href = url;
 
+                // Tenta extrair o nome do arquivo do cabeçalho Content-Disposition
                 const timestamp = new Date().toLocaleTimeString('pt-BR').replace(/:/g, 'h');
-                const fmt = document.querySelector('input[name="img_format"]:checked').value;
+                let filename = currentMode === 'pdf-to-img' ? `Imagens_Convertidas_${timestamp}.zip` : `Imagens_Unificadas_${timestamp}.pdf`;
+                
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
 
-                if (currentMode === 'pdf-to-img') a.download = `Imagens_${fmt.toUpperCase()}_${timestamp}.zip`;
-                else a.download = `Imagens_Unificadas_${timestamp}.pdf`;
-
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);

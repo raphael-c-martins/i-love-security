@@ -1,5 +1,20 @@
 # Histórico e Diário de Decisões Arquiteturais (I Love Security) 🔐
 
+## [29/04/2026] - Refatoração do Conversor PDF para Imagem (Batch & Smart Delivery)
+- **Problema:** 
+  1. Bug no processamento em lote: apenas o primeiro arquivo da lista era convertido.
+  2. Experiência de usuário (UX) sub-otimizada: o sistema forçava o download em .zip mesmo para conversões de arquivo único.
+- **Solução:** 
+  - **Processamento em Lote Real:** Refatoração da rota `/api/pdf-para-jpg` para iterar sobre todos os arquivos da `List[UploadFile]`.
+  - **Entrega Inteligente (Smart Delivery):** Implementação de lógica condicional no backend para retornar o arquivo bruto (raw image) se o resultado for apenas 1 imagem, ou um ZIP se houver múltiplas.
+  - **Remoção do PNG:** Opção removida do conversor de PDF para evitar resultados inconsistentes de transparência; o fluxo recomendado agora é converter para JPG/WebP e usar o removedor de fundo dedicado.
+  - **Expansão de Layout:** Aumentada a largura máxima da interface (max-w-7xl) para reduzir a sensação de "espremido" e otimizar o uso da tela.
+  - **Miniaturas Reais (Thumbnails):** Implementada renderização dinâmica da primeira página de cada PDF na lista de seleção usando `pdf.js`, permitindo identificação visual imediata dos arquivos antes da conversão.
+  - **Nomenclatura Dinâmica:** O sistema agora extrai e utiliza o nome original do arquivo (ex: `TESTE.pdf` -> `TESTE.jpg`) em vez de gerar nomes com timestamp no arquivo individual.
+  - **Logging de Auditoria:** Adicionado log consolidado que identifica todos os nomes de arquivos processados e o total de imagens geradas.
+- **Resultado:** Maior estabilidade na conversão em lote e uma interface mais profissional para conversões rápidas de documentos únicos.
+
+
 ## [28/04/2026] - Estabilização do Modo Studio e UX de Alta Precisão
 - **Problema:** Interferência entre as ferramentas de edição (pincel) e navegação (pan). O usuário acabava desenhando acidentalmente ao tentar reposicionar a imagem com zoom.
 - **Solução:** Implementação de arquitetura de estados para navegação:
