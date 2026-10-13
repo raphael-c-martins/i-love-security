@@ -111,6 +111,19 @@ uvicorn main:app --host 0.0.0.0 --port 8001
 
 ---
 
+---
+
+## 🔐 Como Configurar HTTPS Válido na Rede Local (Zero Avisos de 'Não Seguro')
+
+Se você deseja disponibilizar o **I Love Security** para sua equipe ou empresa com conexões seguras criptografadas (HTTPS), links amigáveis (ex: `https://ilovesecurity`) e o cadeado verde ativo em todos os navegadores, criamos um guia passo a passo completo:
+
+👉 **[Consulte o Guia de HTTPS On-Premise (Nginx + SAN + GPO)](docs/HTTPS_REDE_LOCAL.md)**
+
+O tutorial aborda:
+- Geração de certificados autoassinados de 10 anos com suporte obrigatório a **SAN (*Subject Alternative Name*)**.
+- Configuração do **Nginx como proxy reverso com HSTS** e suporte a uploads massivos.
+- Distribuição de confiança automática nas estações de trabalho via **Política de Grupo (GPO) do Active Directory** ou instalação manual no Windows e Linux.
+
 ## 🔒 Auditoria e Boas Práticas
 
 - **Sem persistência indevida**: Arquivos temporários gerados durante o processamento são sanitizados e apagados.
