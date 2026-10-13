@@ -1,0 +1,34 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs Locais do I Love Security (Privacidade)
+logs/*
+!logs/.gitkeep
+
+# Feedbacks (Privacidade)
+feedbacks/*
+!feedbacks/.gitkeep
+# Pastas Temporárias e IDE
+TEMPORARIO/
+ferramentas/temp_tif/
+.vscode/
+
+# Arquivos de sistema do Windows
+Thumbs.db
+Desktop.ini
+
+# Variáveis de Ambiente e Credenciais
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.log

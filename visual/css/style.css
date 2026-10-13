@@ -1,0 +1,288 @@
+/* visual/css/style.css */
+
+/* Animações */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Grid de Páginas (Scroll bonito) */
+#pages-grid::-webkit-scrollbar { width: 8px; }
+#pages-grid::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+#pages-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+#pages-grid::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* TOAST NOTIFICATION (Aquele aviso preto elegante) */
+#custom-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #1f2937; /* Gray 900 */
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 50;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+#custom-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#custom-toast.error {
+    border-left: 4px solid #ef4444; /* Red 500 */
+}
+
+#custom-toast.success {
+    border-left: 4px solid #22c55e; /* Green 500 */
+}
+
+#custom-toast.info {
+    border-left: 4px solid #3b82f6; /* Blue 500 */
+}
+
+#custom-toast.warning {
+    border-left: 4px solid #f59e0b; /* Amber 500 */
+}
+
+/* ==========================================
+   MODO NOTURNO SÓBRIO (Alta Densidade & Contraste)
+   ========================================== */
+.dark body {
+    background-color: #111827 !important; /* Gray 900 */
+    color: #f3f4f6 !important; /* Gray 100 */
+}
+
+.dark nav, 
+.dark .bg-white,
+.dark #feedback-modal-content {
+    background-color: #1f2937 !important; /* Gray 800 */
+    border-color: #374151 !important; /* Gray 700 */
+    color: #f3f4f6 !important;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark .text-gray-800 {
+    color: #f9fafb !important; /* Gray 50 */
+}
+
+.dark p,
+.dark span,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+    color: #d1d5db !important; /* Gray 300 */
+}
+
+.dark .text-gray-400 {
+    color: #9ca3af !important; /* Gray 400 */
+}
+
+.dark .border-gray-200,
+.dark .border-gray-100,
+.dark .border-gray-300,
+.dark hr {
+    border-color: #374151 !important; /* Gray 700 */
+}
+
+/* Área de Upload e Drop-Zone */
+#drop-zone {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#drop-zone.dragover {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.04) !important;
+    transform: scale(1.008);
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.1);
+}
+
+.dark #drop-zone {
+    background-color: #1f2937 !important;
+    border-color: #4b5563 !important; /* Gray 600 */
+}
+
+.dark #drop-zone:hover {
+    border-color: #ef4444 !important; /* Red 500 */
+}
+
+.dark #drop-zone.dragover {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+/* Inputs do feedback e demais formulários */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark select,
+.dark textarea {
+    background-color: #374151 !important; /* Gray 700 */
+    border-color: #4b5563 !important; /* Gray 600 */
+    color: #f9fafb !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #9ca3af !important; /* Gray 400 */
+}
+
+/* Botões do painel de sub-filtros */
+.dark .filter-btn {
+    background-color: #1f2937 !important;
+    color: #d1d5db !important;
+    border: 1px solid #374151 !important;
+}
+
+.dark .filter-btn:hover {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+}
+
+.dark .filter-btn.bg-gray-800 {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+    border: none !important;
+}
+
+/* Links do menu de abas principais (Header) */
+.dark .main-tab.text-gray-500 {
+    color: #9ca3af !important;
+}
+.dark .main-tab.text-gray-500:hover {
+    color: #f3f4f6 !important;
+}
+
+.dark .main-tab.text-red-600 {
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+/* Cards do grid principal */
+.dark #tools-grid > div {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+.dark #tools-grid > div:hover {
+    border-color: #4b5563 !important;
+}
+
+.dark #tools-grid h3 {
+    color: #f9fafb !important;
+}
+
+.dark #tools-grid h3:hover, 
+.dark #tools-grid > div:hover h3 {
+    color: #ef4444 !important;
+}
+
+/* Lista de miniaturas/arquivos carregados */
+.dark #file-list > div {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+/* Toast de notificações */
+.dark #custom-toast {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+}
+
+/* Refinamento de ícones e fundos dos Cards em Modo Noturno (Suavização de Contraste) */
+.dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15) !important; }
+.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.15) !important; }
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.15) !important; }
+.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.15) !important; }
+.dark .bg-teal-100 { background-color: rgba(20, 184, 166, 0.15) !important; }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+
+/* Ícones dinâmicos no Modo Noturno */
+.dark .text-purple-600 { color: #c084fc !important; }
+.dark .text-red-600 { color: #f87171 !important; }
+.dark .text-orange-600 { color: #fb923c !important; }
+.dark .text-green-600 { color: #4ade80 !important; }
+.dark .text-blue-700 { color: #60a5fa !important; }
+.dark .text-emerald-600 { color: #34d399 !important; }
+.dark .text-pink-600 { color: #f472b6 !important; }
+.dark .text-indigo-600 { color: #818cf8 !important; }
+.dark .text-teal-600 { color: #2dd4bf !important; }
+.dark .text-amber-600 { color: #fbbf24 !important; }
+
+/* Refinamento dos Badges NOVO/ATUALIZADO no Modo Noturno */
+.dark .absolute.top-4.right-4 {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   BARRA DE PROGRESSO & TELEMETRIA DE CARGA
+   ========================================== */
+@keyframes progressStripes {
+    from { background-position: 40px 0; }
+    to { background-position: 0 0; }
+}
+
+.progress-stripes-active {
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.25) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0.25) 75%,
+        transparent 75%,
+        transparent
+    ) !important;
+    background-size: 40px 40px !important;
+    animation: progressStripes 1s linear infinite !important;
+}
+
+/* Micro-interações do Stepper de Progresso */
+.u-step-pill {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.u-step-active {
+    font-weight: 700;
+}
+
+.u-step-done {
+    color: #10b981 !important;
+}
+
+.u-step-done .u-step-circle {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
+
+.u-step-line {
+    transition: background-color 0.35s ease;
+}
+
+.u-step-line.done {
+    background-color: #10b981 !important;
+}
+
+/* Efeito de pulso discreto em processamento */
+@keyframes pulseSubtle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.015); opacity: 0.92; }
+}
+
+.animate-pulse-subtle {
+    animation: pulseSubtle 2s infinite ease-in-out;
+}

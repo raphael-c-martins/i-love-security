@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  ilovesecurity:
+    build: .
+    container_name: ilovesecurity
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./logs:/app/logs
+      - ./feedbacks:/app/feedbacks
+    environment:
+      - PYTHONUNBUFFERED=1
