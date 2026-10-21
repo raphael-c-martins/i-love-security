@@ -1,5 +1,7 @@
 import os
 import json
+import uuid
+import asyncio
 from datetime import datetime
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
@@ -19,7 +21,8 @@ async def salvar_feedback(tipo: str, mensagem: str, user_agent: str = "Desconhec
     Salva o feedback enviado pelo usuário em um arquivo JSON.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    feedback_id = f"feedback_{timestamp}"
+    # Sufixo aleatório: dois envios no mesmo segundo não se sobrescrevem
+    feedback_id = f"feedback_{timestamp}_{uuid.uuid4().hex[:8]}"
     
     data = {
         "id": feedback_id,
@@ -31,26 +34,30 @@ async def salvar_feedback(tipo: str, mensagem: str, user_agent: str = "Desconhec
     
     file_path = os.path.join(FEEDBACK_DIR, f"{feedback_id}.json")
     
-    try:
-        with open(file_path, "w", encoding="utf-8") as f:
+    def _gravar():
+        # "x": nunca sobrescreve um feedback existente
+        with open(file_path, "x", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+
+    try:
+        await asyncio.to_thread(_gravar)
         return True, feedback_id
     except Exception as e:
         print(f"Erro ao salvar feedback: {e}")
-        return False, str(e)
+        return False, "Não foi possível salvar o feedback."
 
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Literal, Optional
 
 class FeedbackSchema(BaseModel):
-    tipo: str
-    mensagem: str
-    nome: Optional[str] = None
-    email: Optional[str] = None
+    tipo: Literal["sugestao", "bug", "elogio", "outro"]
+    mensagem: str = Field(..., min_length=10, max_length=5000)
+    nome: Optional[str] = Field(None, max_length=120)
+    email: Optional[str] = Field(None, max_length=200)
 
 @router.post("/api/feedback")
 async def receber_feedback(request: Request, feedback_data: FeedbackSchema):
-    user_agent = request.headers.get('user-agent', 'Desconhecido')
+    user_agent = request.headers.get('user-agent', 'Desconhecido')[:300]
     # Opcionalmente poderíamos incluir nome e email no arquivo, mas o foco é tipo e mensagem
     mensagem_completa = feedback_data.mensagem
     if feedback_data.nome:

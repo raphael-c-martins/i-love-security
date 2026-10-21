@@ -5,6 +5,32 @@
 ## Diretrizes de Preservação
 > **ATENÇÃO:** É terminantemente PROIBIDO realizar o apagamento de logs da pasta `/logs/` ou o reset de banco de dados em qualquer circunstância de manutenção, atualização ou refatoração do sistema.
 
+## [21/10/2026] - Avaliação Geral e Correções Críticas de Segurança e Privacidade (Fase 0 do Roadmap)
+
+- **Motivo:** O usuário pediu uma avaliação do quanto o projeto cumpre a promessa de ser uma ferramenta offline que não coleta dados nem vaza documentos. A avaliação encontrou uma falha crítica e pontos que contradiziam o "100% offline". O resultado completo virou o [ROADMAP.md](ROADMAP.md).
+
+- **Problemas encontrados (e confirmados na prática):**
+  1. **Apagamento de qualquer pasta do servidor:** a rota `POST /api/organizar-tif` (usada por Organizar TIF e Recortar TIF) montava o caminho com o `job_id` enviado pelo navegador sem validar. Com um caminho no lugar do ID, o tratamento de erro chamava `shutil.rmtree` nesse caminho. Confirmado com uma pasta descartável: uma única requisição, sem login, apagou a pasta. Como o CORS estava aberto para qualquer site, outro site aberto no navegador de alguém da rede também podia disparar a chamada.
+  2. **Dependência de CDNs externas:** as três páginas carregavam o Tailwind (`cdn.tailwindcss.com`) e o pdf.js (`cdnjs`) da internet. Isso enviava a terceiros o IP, o navegador e a página acessada, deixava a interface sem estilo sem internet e permitia que um comprometimento da CDN rodasse código na página onde os documentos são lidos.
+  3. **Originais de usuários esquecidos em disco:** quem abria Organizar TIF e desistia deixava o arquivo em `ferramentas/temp_tif/` para sempre (havia 4 TIFs, 157 MB, desde 29/05/2026 na máquina de desenvolvimento).
+  4. Nome do arquivo do navegador usado no caminho em disco (Juntar TIF), rotas de feedback/log sem limite de tamanho (log aceitava linhas falsas), feedbacks no mesmo segundo se sobrescrevendo e healthcheck do Docker em `/` em vez de `/health`.
+
+- **Implementações:**
+  1. **`ferramentas/ferramentas_imagem.py`:** `resolver_job_dir()` aceita apenas UUID gerado pelo servidor e confere o caminho com `realpath` + `commonpath`. `cleanup_job_dir()` só apaga dentro de `temp_tif` (defesa extra). `TEMP_TIF_DIR` passou a ser caminho absoluto (antes dependia da pasta de onde o servidor era iniciado).
+  2. **Limpeza automática (`utils/limpeza.py` + `main.py`):** tarefa em segundo plano (lifespan do FastAPI) que roda na inicialização e a cada 15 minutos, removendo jobs de TIF e pastas temporárias com mais de 2 horas. As pastas temporárias do sistema agora usam o prefixo `ils_`, então a varredura nunca toca em arquivos de outros programas. **Atenção:** na primeira inicialização desta versão, os TIFs antigos esquecidos em `temp_tif` serão removidos (é o comportamento esperado).
+  3. **Frontend 100% local:** Tailwind 3.4.17 (mesma versão que o CDN servia) compilado em `visual/css/tailwind.css` (`tailwind.config.js` + `npm run build:css`) e pdf.js 3.11.174 em `visual/js/vendor/pdfjs/`. Os arquivos do pdf.js foram conferidos por SHA-256 contra os da CDN (idênticos). A cobertura de classes foi verificada no navegador (todas as telas de upload) e por varredura estática dos módulos.
+  4. **Cabeçalhos de segurança (`utils/seguranca.py`):** CSP `default-src 'self'` (sem `unsafe-eval`, o que também mitiga a CVE-2024-4367 do pdf.js 3.x), `nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options`, `Permissions-Policy`.
+  5. **CORS aberto removido + bloqueio de CSRF:** interface e API estão na mesma origem, então o `CORSMiddleware` foi retirado. Envios para `/api/` com `Sec-Fetch-Site: cross-site` (definido pelo navegador, não forjável por JavaScript) recebem 403. Esse cabeçalho não depende do Host repassado pelo Nginx.
+  6. **Juntar TIF:** o arquivo é salvo como `input_N`, sem o nome vindo do navegador (o motor detecta o formato pelo conteúdo).
+  7. **Feedback e log do frontend:** schemas Pydantic com limites (`tipo` restrito às opções do formulário, mensagem de 10 a 5000 caracteres etc.), log em linha única e feedback com ID único gravado em thread.
+  8. **Testes de regressão (`tests/test_seguranca.py`, 17 testes, `unittest` sem dependências novas)** usando apenas pastas temporárias.
+
+- **Validação:** testes automatizados passando; servidor local testado no navegador (miniaturas de PDF via pdf.js local, miniaturas TIF via UTIF.js, modo escuro, zero requisições externas e zero violações de CSP). O mesmo ataque que apagou a pasta na avaliação passou a retornar 400, com a pasta intacta.
+
+- **Decisão de escopo:** o usuário confirmou que o uso é desktop corporativo (~1 em 500 acessos pelo celular). Ajustes de celular/toque ficaram como baixa prioridade no roadmap.
+
+---
+
 ## [13/10/2026] - Auditoria de HTTPS, Correção de SAN Mismatch e Blindagem HSTS
 
 - **Motivo:** O usuário reportou que novas estações da rede acusavam o aviso de "Não Seguro" ao acessar `https://ilovesecurity` e que ferramentas de sniffer capturavam pacotes em HTTP em texto claro.

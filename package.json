@@ -1,0 +1,11 @@
+{
+  "name": "i-love-security-frontend",
+  "private": true,
+  "description": "Build local do CSS (Tailwind). Não é necessário para rodar o servidor: o CSS gerado já fica versionado em visual/css/tailwind.css.",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i visual/css/tailwind.src.css -o visual/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

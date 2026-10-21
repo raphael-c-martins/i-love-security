@@ -14,11 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I Love Security | Imagens</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
         if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
@@ -27,11 +23,13 @@
     </script>
 
     <link rel="stylesheet" href="/visual/css/style.css?v=20260721_3">
+    <!-- Tailwind compilado localmente (npm run build:css). Nenhum recurso é carregado de fora. -->
+    <link rel="stylesheet" href="/visual/css/tailwind.css?v=20261021">
 
     <link rel="icon" type="image/png" href="/visual/img/logo.png">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script src="/visual/js/vendor/pdfjs/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = '/visual/js/vendor/pdfjs/pdf.worker.min.js';</script>
 </head>
 
 <body class="bg-gray-50 font-sans">

@@ -32,3 +32,6 @@ Desktop.ini
 *.pem
 *.pfx
 *.log
+
+# Dependências de build do frontend (Tailwind)
+node_modules/

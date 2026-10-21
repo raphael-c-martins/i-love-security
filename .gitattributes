@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Bibliotecas de terceiros: mantidas byte a byte (hash conferido com a origem)
+visual/js/vendor/** -text

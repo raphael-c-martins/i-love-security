@@ -5,7 +5,7 @@ import shutil
 import base64
 import zipfile
 import asyncio
-import tempfile
+import time
 import urllib.parse
 import gc
 from fastapi import APIRouter, UploadFile, File, Form, Response, BackgroundTasks
@@ -15,6 +15,7 @@ from typing import List
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from utils.logger import registrar_log
+from utils.limpeza import criar_dir_temp
 
 router = APIRouter()
 
@@ -310,7 +311,7 @@ async def comprimir_tif(
 ):
     """Comprime arquivos TIF usando streaming em disco temporário (HA) para evitar consumo excessivo de RAM."""
     is_gray = grayscale.lower() == "true"
-    temp_dir = tempfile.mkdtemp(prefix="tif_compress_")
+    temp_dir = criar_dir_temp("tif_compress")
 
     if level == "extreme":
         max_width = 1200
@@ -390,12 +391,72 @@ async def comprimir_tif(
         return Response(content=f"Erro ao comprimir TIF: {str(e)}", status_code=500)
 
 
-TEMP_TIF_DIR = "ferramentas/temp_tif"
+TEMP_TIF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_tif")
+
+# Tempo máximo que um TIF enviado para organizar/recortar pode ficar em disco
+JOB_TIF_VALIDADE_SEGUNDOS = 2 * 60 * 60
+
+
+def _caminho_dentro_de(base: str, caminho: str) -> bool:
+    """Compara por componentes (commonpath) após normalizar, nunca por texto cru."""
+    base_real = os.path.realpath(base)
+    caminho_real = os.path.realpath(caminho)
+    try:
+        return caminho_real != base_real and os.path.commonpath([base_real, caminho_real]) == base_real
+    except ValueError:
+        # Drives diferentes no Windows
+        return False
+
+
+def resolver_job_dir(job_id: str):
+    """
+    Converte o job_id enviado pelo navegador no diretório do job.
+    Aceita apenas UUIDs gerados pelo próprio servidor; qualquer outra coisa
+    (caminhos, '..', absolutos) retorna None.
+    """
+    try:
+        job_uuid = uuid.UUID(str(job_id))
+    except (ValueError, AttributeError, TypeError):
+        return None
+    if str(job_uuid) != str(job_id).lower():
+        return None
+
+    job_dir = os.path.join(TEMP_TIF_DIR, str(job_uuid))
+    if not _caminho_dentro_de(TEMP_TIF_DIR, job_dir):
+        return None
+    return job_dir
 
 
 def cleanup_job_dir(path: str):
+    # Defesa extra: só apaga diretórios que estejam dentro de TEMP_TIF_DIR
+    if not _caminho_dentro_de(TEMP_TIF_DIR, path):
+        return
     if os.path.exists(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def limpar_jobs_expirados(validade_segundos: int = JOB_TIF_VALIDADE_SEGUNDOS) -> int:
+    """
+    Remove jobs de organizar/recortar TIF abandonados pelo usuário (o arquivo
+    original fica em disco até o envio final). Retorna quantos foram removidos.
+    """
+    if not os.path.isdir(TEMP_TIF_DIR):
+        return 0
+
+    agora = time.time()
+    removidos = 0
+    for nome in os.listdir(TEMP_TIF_DIR):
+        caminho = os.path.join(TEMP_TIF_DIR, nome)
+        if not os.path.isdir(caminho):
+            continue
+        try:
+            idade = agora - os.path.getmtime(caminho)
+        except OSError:
+            continue
+        if idade > validade_segundos:
+            cleanup_job_dir(caminho)
+            removidos += 1
+    return removidos
 
 
 def _gerar_preview_tif_sync(content: bytes, only_first: bool, job_id: str = None, filename: str = ""):
@@ -472,8 +533,8 @@ async def organizar_tif_route(
     page_order: str = Form(...) # Ex: "0,2,1"
 ):
     """Reordena o TIF com base no job_id"""
-    job_dir = os.path.join(TEMP_TIF_DIR, job_id)
-    if not os.path.exists(job_dir):
+    job_dir = resolver_job_dir(job_id)
+    if job_dir is None or not os.path.isdir(job_dir):
         return Response(content="Sessão inválida ou expirada.", status_code=400)
         
     input_tif = os.path.join(job_dir, "original.tif")

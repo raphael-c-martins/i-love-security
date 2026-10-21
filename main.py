@@ -7,38 +7,72 @@
 # Para desligar, abra o .bat e escolha a opção [2].
 # -----------------------------
 
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
 # IMPORTAÇÃO CORRIGIDA (Usando underlines em vez de hífens)
 from ferramentas import juntar_pdf, dividir_pdf, comprimir_pdf, conversao_img, conversao_word, organizar_pdf, remover_fundo, ferramentas_imagem, conversao_pdf_tiff, feedback, logs_frontend
+from utils.limpeza import limpar_temps_do_sistema
+from fastapi.responses import PlainTextResponse
+from utils.seguranca import aplicar_cabecalhos_seguranca, requisicao_cross_site_bloqueada
 
-app = FastAPI()
+# Intervalo da varredura de arquivos temporários esquecidos (15 minutos)
+INTERVALO_LIMPEZA_SEGUNDOS = 15 * 60
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Original-Size", "X-Final-Size", "X-Economy-Percent", "Content-Disposition"],
-)
+
+async def _executar_limpeza():
+    """Apaga originais de usuários que ficaram em disco além do prazo."""
+    try:
+        jobs = await asyncio.to_thread(ferramentas_imagem.limpar_jobs_expirados)
+        temps = await asyncio.to_thread(limpar_temps_do_sistema)
+        if jobs or temps:
+            await registrar_log(f"[LIMPEZA] Temporários expirados removidos: {jobs} job(s) de TIF, {temps} pasta(s) temporária(s).")
+    except Exception as e:
+        print(f"Erro na limpeza de temporários: {e}")
+
+
+async def _loop_limpeza():
+    while True:
+        await _executar_limpeza()
+        await asyncio.sleep(INTERVALO_LIMPEZA_SEGUNDOS)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tarefa = asyncio.create_task(_loop_limpeza())
+    try:
+        yield
+    finally:
+        tarefa.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
+
+# Sem CORSMiddleware: interface e API são servidas pela mesma origem, então
+# nenhum outro site precisa (nem deve) conseguir ler as respostas desta API.
 
 from fastapi import Request
-from utils.logger import client_ip_var
+from utils.logger import client_ip_var, registrar_log
 
 @app.middleware("http")
 async def log_client_ip(request: Request, call_next):
     # Obtém o IP do cliente (ou "Local" caso não esteja disponível)
     ip = request.client.host if request.client else "Local"
-    
+
     # Seta o IP no contexto atual e guarda o token para resetar depois
     token = client_ip_var.set(ip)
     try:
-        response = await call_next(request)
+        if requisicao_cross_site_bloqueada(request):
+            await registrar_log(f"[SEGURANCA] Envio de outro site bloqueado (CSRF): {request.method} {request.url.path}")
+            response = PlainTextResponse("Requisição de outro site bloqueada.", status_code=403)
+        else:
+            response = await call_next(request)
+        aplicar_cabecalhos_seguranca(response)
         return response
     finally:
         client_ip_var.reset(token)

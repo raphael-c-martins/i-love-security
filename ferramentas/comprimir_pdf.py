@@ -2,13 +2,13 @@ import subprocess
 import asyncio
 import os
 import shutil
-import tempfile
 import sys
 import urllib.parse
 import fitz  # PyMuPDF engine para fallback nativo
 from fastapi import APIRouter, UploadFile, Form, Response, HTTPException
 from typing import List
 from utils.logger import registrar_log
+from utils.limpeza import criar_dir_temp
 
 router = APIRouter()
 
@@ -85,7 +85,7 @@ async def comprimir_pdf(
     raw_name = file_obj.filename or "documento.pdf"
     original_name = raw_name.rsplit(".", 1)[0]
     
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = criar_dir_temp("pdf_compress")
     input_path = os.path.join(temp_dir, "input.pdf")
     output_path = os.path.join(temp_dir, "output.pdf")
 

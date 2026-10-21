@@ -7,7 +7,6 @@ import os
 import zipfile
 import asyncio
 import traceback
-import tempfile
 import shutil
 import urllib.parse
 from fastapi import APIRouter, UploadFile, File, Response, Request
@@ -18,6 +17,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import fitz  # PyMuPDF
 from utils.logger import registrar_log
+from utils.limpeza import criar_dir_temp
 from utils.tiff_engine import mesclar_tiffs_streaming, inspecionar_tiff
 
 router = APIRouter()
@@ -317,15 +317,14 @@ async def juntar_tiffs(request: Request, files: List[UploadFile] = File(...)):
         return Response(content="Nenhum arquivo enviado.", status_code=400)
 
     ip_cliente = request.client.host if request.client else "Desconhecido"
-    temp_dir = tempfile.mkdtemp(prefix="merge_tif_")
+    temp_dir = criar_dir_temp("merge_tif")
 
     try:
         input_paths = []
         total_bytes = 0
 
         for idx, f in enumerate(files):
-            orig_name = f.filename or f"arquivo_{idx}.tif"
-            in_path = os.path.join(temp_dir, f"input_{idx}_{orig_name}")
+            in_path = os.path.join(temp_dir, f"input_{idx}")
             with open(in_path, "wb") as f_out:
                 while chunk := await f.read(4 * 1024 * 1024):
                     f_out.write(chunk)

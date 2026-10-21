@@ -126,9 +126,32 @@ O tutorial aborda:
 
 ## 🔒 Auditoria e Boas Práticas
 
-- **Sem persistência indevida**: Arquivos temporários gerados durante o processamento são sanitizados e apagados.
+- **100% offline de verdade**: todo CSS e JavaScript (Tailwind, pdf.js, UTIF.js) é servido pelo próprio servidor. Um cabeçalho **CSP** (`default-src 'self'`) proíbe o navegador de carregar ou enviar qualquer coisa para outro endereço, então nem um erro de código consegue vazar dados para fora.
+- **Sem persistência indevida**: os arquivos temporários são apagados após a entrega. Uma limpeza automática roda a cada 15 minutos e remove o que ficou para trás por mais de 2 horas (ex.: alguém abriu "Organizar TIF" e desistiu, ou o processamento foi interrompido).
+- **Proteção contra outros sites**: a API só aceita envios feitos pela própria interface. Envios disparados por outro site aberto no navegador são bloqueados.
 - **Logs de Auditoria**: Registros locais salvos na pasta `/logs/` para monitoramento de volume trafegado e desempenho.
-- **Canal de Feedback**: Caixa de sugestões com escrita assíncrona isolada na pasta `/feedbacks/`.
+- **Canal de Feedback**: Caixa de sugestões com escrita assíncrona isolada na pasta `/feedbacks/`, com limites de tamanho.
+
+## 🧪 Testes
+
+Os testes usam apenas pastas temporárias (nunca os logs ou feedbacks reais):
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## 🎨 CSS (Tailwind) — só para quem altera a interface
+
+O CSS compilado já vem pronto em `visual/css/tailwind.css`, então **não é preciso Node.js para rodar o sistema**. Se você adicionar classes novas do Tailwind nos HTML ou nos módulos JS, gere o CSS de novo:
+
+```bash
+npm install
+npm run build:css
+```
+
+## 🗺️ Roadmap
+
+As próximas melhorias planejadas estão em [ROADMAP.md](ROADMAP.md).
 
 ---
 

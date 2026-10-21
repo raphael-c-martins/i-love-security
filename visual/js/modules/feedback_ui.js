@@ -78,11 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Seu Nome (opcional)</label>
-                        <input type="text" id="fb-nome" placeholder="Como devemos chamá-lo" class="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                        <input type="text" id="fb-nome" maxlength="120" placeholder="Como devemos chamá-lo" class="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Seu E-mail (opcional)</label>
-                        <input type="email" id="fb-email" placeholder="Para possível retorno" class="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                        <input type="email" id="fb-email" maxlength="200" placeholder="Para possível retorno" class="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all">
                     </div>
                 </div>
 
