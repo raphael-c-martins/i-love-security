@@ -31,6 +31,41 @@ CABECALHOS_SEGURANCA = {
 }
 
 
+import ipaddress
+
+# Endereços de onde aceitamos cabeçalhos de IP repassados (o Nginx roda na mesma máquina)
+PROXIES_CONFIAVEIS = {"127.0.0.1", "::1"}
+
+
+def _ip_valido(valor: str):
+    try:
+        return str(ipaddress.ip_address(valor.strip()))
+    except ValueError:
+        return None
+
+
+def obter_ip_cliente(request) -> str:
+    """
+    IP real de quem fez a requisição, para o log de auditoria.
+
+    X-Real-IP / X-Forwarded-For só são aceitos quando a conexão vem do próprio
+    proxy (loopback); qualquer outro cliente poderia forjar esses cabeçalhos.
+    Do X-Forwarded-For usamos o ÚLTIMO salto (o que o Nginx adicionou), nunca o
+    primeiro, que é controlado pelo navegador. Valores que não são IP são ignorados.
+    """
+    conexao = request.client.host if request.client else ""
+    if conexao in PROXIES_CONFIAVEIS:
+        real_ip = _ip_valido(request.headers.get("x-real-ip", ""))
+        if real_ip:
+            return real_ip
+        encaminhado = request.headers.get("x-forwarded-for", "")
+        if encaminhado:
+            ultimo_salto = _ip_valido(encaminhado.split(",")[-1])
+            if ultimo_salto:
+                return ultimo_salto
+    return conexao or "Local"
+
+
 METODOS_SEGUROS = {"GET", "HEAD", "OPTIONS"}
 
 

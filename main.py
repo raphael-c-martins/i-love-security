@@ -19,7 +19,7 @@ Image.MAX_IMAGE_PIXELS = None
 from ferramentas import juntar_pdf, dividir_pdf, comprimir_pdf, conversao_img, conversao_word, organizar_pdf, remover_fundo, ferramentas_imagem, conversao_pdf_tiff, feedback, logs_frontend
 from utils.limpeza import limpar_temps_do_sistema
 from fastapi.responses import PlainTextResponse
-from utils.seguranca import aplicar_cabecalhos_seguranca, requisicao_cross_site_bloqueada
+from utils.seguranca import aplicar_cabecalhos_seguranca, requisicao_cross_site_bloqueada, obter_ip_cliente
 
 # Intervalo da varredura de arquivos temporários esquecidos (15 minutos)
 INTERVALO_LIMPEZA_SEGUNDOS = 15 * 60
@@ -61,8 +61,8 @@ from utils.logger import client_ip_var, registrar_log
 
 @app.middleware("http")
 async def log_client_ip(request: Request, call_next):
-    # Obtém o IP do cliente (ou "Local" caso não esteja disponível)
-    ip = request.client.host if request.client else "Local"
+    # IP real do cliente: cabeçalhos do Nginx só são aceitos quando a conexão vem do próprio proxy
+    ip = obter_ip_cliente(request)
 
     # Seta o IP no contexto atual e guarda o token para resetar depois
     token = client_ip_var.set(ip)

@@ -5,6 +5,14 @@
 ## Diretrizes de Preservação
 > **ATENÇÃO:** É terminantemente PROIBIDO realizar o apagamento de logs da pasta `/logs/` ou o reset de banco de dados em qualquer circunstância de manutenção, atualização ou refatoração do sistema.
 
+## [21/10/2026] - IP Real do Cliente Atrás do Nginx (Log de Auditoria)
+
+- **Motivo:** Ao levar as correções para a versão do cartório, foi encontrado lá um código que confiava no **primeiro** valor do `X-Forwarded-For`. Esse valor pode ser forjado pelo navegador para falsificar o IP no log de auditoria. A correção foi trazida também para esta versão, para `utils/seguranca.py` ser igual nos dois repositórios.
+- **Implementação:** `obter_ip_cliente()` só aceita `X-Real-IP` / `X-Forwarded-For` quando a conexão vem do próprio proxy (loopback). Usa o `X-Real-IP` ou o **último** salto do `X-Forwarded-For` (o que o Nginx adicionou) e descarta valores que não são IP. Sem proxy, o comportamento é o mesmo de antes (IP da conexão).
+- **Testes:** 5 novos em `tests/test_seguranca.py` (cabeçalho ignorado fora do proxy, X-Real-IP, último salto, valor inválido, sem cliente). Total: 29.
+
+---
+
 ## [21/10/2026] - Recortar TIF: Opção de Separar Cada Página em um Arquivo Individual
 
 - **Motivo:** O usuário pediu que o Recortar TIF pudesse entregar as páginas selecionadas como arquivos separados (ex.: 5 páginas → 5 TIFs), em vez de sempre juntar tudo em um único TIF.

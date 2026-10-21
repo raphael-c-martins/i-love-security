@@ -26,7 +26,7 @@ from PIL import Image
 
 import utils.logger as logger
 import utils.limpeza as limpeza
-from utils.seguranca import aplicar_cabecalhos_seguranca, requisicao_cross_site_bloqueada
+from utils.seguranca import aplicar_cabecalhos_seguranca, requisicao_cross_site_bloqueada, obter_ip_cliente
 from ferramentas import ferramentas_imagem, feedback, logs_frontend
 
 
@@ -213,6 +213,42 @@ class TestCabecalhosECsrf(unittest.TestCase):
         for valor in ("same-origin", "none", None):
             headers = {"Sec-Fetch-Site": valor} if valor else {}
             self.assertEqual(self.client.post("/api/teste", headers=headers).status_code, 200, valor)
+
+
+class TestIpCliente(unittest.TestCase):
+    """O IP do log de auditoria não pode ser forjado por cabeçalhos do navegador."""
+
+    def _req(self, conexao, headers=None):
+        class Cliente:
+            host = conexao
+
+        class Req:
+            pass
+
+        r = Req()
+        r.client = Cliente() if conexao else None
+        r.headers = {k.lower(): v for k, v in (headers or {}).items()}
+        return r
+
+    def test_cabecalhos_ignorados_se_nao_vier_do_proxy(self):
+        r = self._req("192.168.0.50", {"X-Forwarded-For": "10.0.0.1", "X-Real-IP": "10.0.0.2"})
+        self.assertEqual(obter_ip_cliente(r), "192.168.0.50")
+
+    def test_atras_do_proxy_usa_x_real_ip(self):
+        r = self._req("127.0.0.1", {"X-Real-IP": "192.168.0.77", "X-Forwarded-For": "1.1.1.1, 192.168.0.77"})
+        self.assertEqual(obter_ip_cliente(r), "192.168.0.77")
+
+    def test_atras_do_proxy_usa_ultimo_salto_do_forwarded_for(self):
+        # O primeiro valor é controlado pelo navegador; o último foi adicionado pelo Nginx
+        r = self._req("127.0.0.1", {"X-Forwarded-For": "6.6.6.6, 192.168.0.77"})
+        self.assertEqual(obter_ip_cliente(r), "192.168.0.77")
+
+    def test_valor_que_nao_e_ip_e_ignorado(self):
+        r = self._req("127.0.0.1", {"X-Real-IP": "1.2.3.4\n[SUCESSO] linha forjada"})
+        self.assertEqual(obter_ip_cliente(r), "127.0.0.1")
+
+    def test_sem_cliente(self):
+        self.assertEqual(obter_ip_cliente(self._req(None)), "Local")
 
 
 class TestValidacaoEntradas(BaseIsolada):
