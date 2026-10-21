@@ -38,7 +38,7 @@ O sistema oferece três suítes completas de alta densidade operacional:
 ### 🖼️ 2. TIF Suite & Motores Avançados (BigTIFF)
 - **Preview Client-Side Instantâneo (UTIF.js)**: Renderização instantânea de miniaturas TIFF diretamente no navegador via JavaScript/Canvas, sem tráfego redundante de rede.
 - **Motor BigTIFF de Alta Performance (tifffile)**: Capacidade de manipular arquivos gigantes (> 4 GB) e mesclagem em streaming contínuo sem estouro de memória RAM.
-- **Recorte Cirúrgico de Intervalos**: Extraia intervalos precisos de páginas de arquivos TIF massivos (ex: `1-5, 8, 12-20`).
+- **Recorte Cirúrgico de Intervalos**: Extraia intervalos precisos de páginas de arquivos TIF massivos (ex: `1-5, 8, 12-20`). Com a opção **"Separar cada página"**, cada página selecionada vira um TIF individual, entregue em um `.zip` com o número da página original no nome (ex: `Escritura_pagina_003.tif`). A escolha fica lembrada no navegador.
 - **Compressão Inteligente**: Detecção automática de canais (1-bit Fax Group4 para P&B vs Deflate/LZW para coloridos).
 
 ### 🎨 3. Image Lab & IA Local

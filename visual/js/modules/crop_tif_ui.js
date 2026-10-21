@@ -145,6 +145,17 @@ async function setupCropTifVisualEditor(file) {
                     <div id="crop-tif-counter" class="bg-amber-50 border border-amber-100 text-amber-800 text-sm p-3 rounded-lg font-medium">
                         0 paginas selecionadas
                     </div>
+
+                    <div>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="relative flex items-center mt-0.5">
+                                <input type="checkbox" id="crop-tif-separar" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-400 bg-transparent transition-all checked:border-amber-500 checked:bg-amber-500">
+                                <svg class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none opacity-0 peer-checked:opacity-100 text-white" viewBox="0 0 14 10" fill="none"><path d="M12.333 1 5 8.333 1.667 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <span class="text-sm text-gray-700 group-hover:text-amber-700 transition-colors select-none">Separar cada pagina em um <strong>arquivo TIF individual</strong></span>
+                        </label>
+                        <p id="crop-tif-separar-hint" class="text-[10px] text-gray-400 mt-1 ml-8">Voce recebe um arquivo .zip com um TIF por pagina.</p>
+                    </div>
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-gray-100 flex flex-col gap-3">
@@ -168,6 +179,15 @@ async function setupCropTifVisualEditor(file) {
     const rangeInput = document.getElementById('crop-tif-range-input');
     const counter = document.getElementById('crop-tif-counter');
     const processBtn = document.getElementById('process-btn-crop-tif');
+    const separarCheck = document.getElementById('crop-tif-separar');
+
+    // Lembra a última escolha do usuário neste navegador (preferência, não dado sensível)
+    try {
+        separarCheck.checked = localStorage.getItem('cropTifSeparar') === 'true';
+    } catch (e) { /* armazenamento indisponível: começa desmarcado */ }
+    separarCheck.addEventListener('change', () => {
+        try { localStorage.setItem('cropTifSeparar', String(separarCheck.checked)); } catch (e) { }
+    });
 
     // --- CANCELAR ---
     document.getElementById('btn-cancel-crop-tif').onclick = () => {
@@ -305,7 +325,9 @@ async function setupCropTifVisualEditor(file) {
 
             try {
                 const baseName = window.currentCropTifOriginalName || "TIF";
-                const filename = `${baseName}_recortado.tif`;
+                // Com uma única página, separar não faz diferença: entrega o TIF direto, sem ZIP
+                const separar = separarCheck.checked && window.cropTifSelectedPages.size > 1;
+                const filename = separar ? `${baseName}_paginas.zip` : `${baseName}_recortado.tif`;
                 const saveBlob = await window.getFileSaver(filename);
                 if (!saveBlob) {
                     btn.innerHTML = originalText;
@@ -321,6 +343,8 @@ async function setupCropTifVisualEditor(file) {
                 const submitData = new FormData();
                 submitData.append("job_id", window.currentCropTifJobId);
                 submitData.append("page_order", pageOrder.join(','));
+                submitData.append("separar", separar ? "true" : "false");
+                submitData.append("nome_base", baseName);
 
                 const resp = await window.fetchWithProgress('/api/organizar-tif', {
                     method: 'POST',
@@ -334,7 +358,10 @@ async function setupCropTifVisualEditor(file) {
                     const blob = await resp.blob();
                     await saveBlob(blob, filename);
 
-                    if (window.showToast) window.showToast("TIF recortado com sucesso!", "success");
+                    const mensagem = separar
+                        ? `${pageOrder.length} arquivos TIF gerados (entregues em .zip)!`
+                        : "TIF recortado com sucesso!";
+                    if (window.showToast) window.showToast(mensagem, "success");
                     btn.innerHTML = "Concluido!";
                     setTimeout(() => {
                         if (window.resetCurrentTool) window.resetCurrentTool();

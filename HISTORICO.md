@@ -5,6 +5,24 @@
 ## Diretrizes de Preservação
 > **ATENÇÃO:** É terminantemente PROIBIDO realizar o apagamento de logs da pasta `/logs/` ou o reset de banco de dados em qualquer circunstância de manutenção, atualização ou refatoração do sistema.
 
+## [21/10/2026] - Recortar TIF: Opção de Separar Cada Página em um Arquivo Individual
+
+- **Motivo:** O usuário pediu que o Recortar TIF pudesse entregar as páginas selecionadas como arquivos separados (ex.: 5 páginas → 5 TIFs), em vez de sempre juntar tudo em um único TIF.
+
+- **Implementações:**
+  1. **Backend (`ferramentas/ferramentas_imagem.py`):** a rota `POST /api/organizar-tif` ganhou os campos opcionais `separar` e `nome_base`. Com `separar=true`, devolve um ZIP com um TIF por página, nomeado pelo número da página **original** (`{nome}_pagina_003.tif`, com zeros à esquerda para ordenar certo no Explorer). Sem o campo, o comportamento é o mesmo de antes, então o Organizar TIF não muda.
+  2. **Memória sob controle:** cada página é gravada e liberada uma de cada vez antes de ir para o ZIP (TIFs escaneados podem ter centenas de MB). O ZIP usa `ZIP_STORED`, porque recomprimir TIF Group4/Deflate só gastaria CPU, e `allowZip64` para arquivos grandes.
+  3. **Processamento em thread:** a rota passou a rodar o trabalho pesado em `asyncio.to_thread` (`_organizar_tif_sync`), sem travar o servidor durante recortes grandes. Isso também beneficia o Organizar TIF.
+  4. **DPI preservada:** as páginas geradas (arquivo único ou separadas) mantêm a resolução original do TIF (antes saíam com a DPI padrão da Pillow). A compressão continua inteligente por página (Group4 para P&B, Adobe Deflate para cor/cinza).
+  5. **Segurança do nome:** o `nome_base` vindo do navegador passa por `nome_base_seguro()` (sem pastas, sem caracteres proibidos no Windows, máx. 100 caracteres). Assim nenhum nome dentro do ZIP consegue criar pastas ao ser extraído. Página repetida na seleção ganha sufixo em vez de sobrescrever.
+  6. **Seleção inválida:** índices fora do intervalo ou negativos retornam 400 **sem apagar o arquivo enviado**, para o usuário corrigir e tentar de novo (exceção própria `SelecaoInvalida`, para não confundir com erros internos da Pillow).
+  7. **Frontend (`visual/js/modules/crop_tif_ui.js`):** checkbox "Separar cada página em um arquivo TIF individual". A escolha fica salva no `localStorage`. Com uma única página selecionada, entrega o TIF direto, sem ZIP. O nome sugerido no "Salvar como" vira `{nome}_paginas.zip`. A checkbox usa borda `gray-400` e fundo transparente porque as regras `!important` do modo escuro em `.bg-white` escondiam o estado marcado.
+  8. **Testes (`tests/test_recortar_tif.py`, 7 novos; total 24):** ZIP com um TIF por página, nomes e DPI, modo arquivo único inalterado, Group4 em P&B, nome malicioso, página repetida e seleção inválida mantendo o arquivo.
+
+- **Validação no navegador:** TIF de 5 páginas, seleção "1-3, 5" com a opção marcada → ZIP com `..._pagina_001/002/003/005.tif`. Preferência lembrada após recarregar. Uma página → TIF direto. Cores da checkbox conferidas nos temas claro e escuro.
+
+---
+
 ## [21/10/2026] - Avaliação Geral e Correções Críticas de Segurança e Privacidade (Fase 0 do Roadmap)
 
 - **Motivo:** O usuário pediu uma avaliação do quanto o projeto cumpre a promessa de ser uma ferramenta offline que não coleta dados nem vaza documentos. A avaliação encontrou uma falha crítica e pontos que contradiziam o "100% offline". O resultado completo virou o [ROADMAP.md](ROADMAP.md).

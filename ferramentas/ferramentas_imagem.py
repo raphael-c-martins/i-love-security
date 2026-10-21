@@ -526,65 +526,136 @@ async def upload_tif_preview(
     except Exception as e:
         return {"error": f"Erro processando TIF: {str(e)}"}
 
+class SelecaoInvalida(ValueError):
+    """Seleção de páginas que não pode ser atendida (erro do usuário, não do servidor)."""
+
+
+_CARACTERES_PROIBIDOS_NOME = '<>:"/\\|?*'
+
+
+def nome_base_seguro(nome: str, padrao: str = "TIF") -> str:
+    """
+    Limpa o nome enviado pelo navegador para uso nos arquivos de dentro do ZIP:
+    sem pastas, sem caracteres proibidos no Windows e com tamanho limitado.
+    """
+    nome = os.path.basename((nome or "").replace("\\", "/"))
+    nome = "".join(c for c in nome if c not in _CARACTERES_PROIBIDOS_NOME and c.isprintable())
+    nome = nome.strip(" .")[:100]
+    return nome or padrao
+
+
+def _salvar_frames_tif(frames: list, destino: str, dpi=None):
+    # Lógica de Inteligência de Compressão:
+    # 1. Se tudo for P&B (Mode 1), Group 4 mantém o tamanho original (~30MB).
+    # 2. Se houver cor, Adobe Deflate preserva fidelidade sem inflar como o JPEG.
+    comp = "group4" if all(f.mode == '1' for f in frames) else "tiff_adobe_deflate"
+    opcoes = {"format": "TIFF", "compression": comp}
+    if dpi:
+        opcoes["dpi"] = dpi
+    frames[0].save(destino, save_all=True, append_images=frames[1:], **opcoes)
+
+
+def _organizar_tif_sync(input_tif: str, job_dir: str, order: list, separar: bool, nome_base: str) -> tuple:
+    """
+    Gera o resultado do Organizar/Recortar TIF. Retorna (caminho, quantidade de arquivos).
+    - separar=False: um único TIF com as páginas na ordem pedida.
+    - separar=True: um ZIP com um TIF por página, nomeado pelo número da página original.
+    """
+    with Image.open(input_tif) as img:
+        total = getattr(img, 'n_frames', 1)
+        indices = [idx for idx in order if 0 <= idx < total]
+        if not indices:
+            raise SelecaoInvalida("Nenhuma página válida foi selecionada.")
+        # A DPI original é mantida (importante para documentos escaneados)
+        dpi = img.info.get("dpi")
+
+        if not separar:
+            frames = []
+            for idx in indices:
+                img.seek(idx)
+                frames.append(img.copy())
+            saida = os.path.join(job_dir, "TIF_Organizado.tif")
+            _salvar_frames_tif(frames, saida, dpi)
+            return saida, 1
+
+        # Um arquivo por página, gravado e liberado um de cada vez (TIFs escaneados
+        # podem ser enormes; não acumulamos todas as páginas na memória)
+        digitos = max(3, len(str(total)))
+        saida = os.path.join(job_dir, "TIF_Paginas.zip")
+        temp_pagina = os.path.join(job_dir, "pagina_temp.tif")
+        nomes_usados = set()
+        with zipfile.ZipFile(saida, "w", zipfile.ZIP_STORED, allowZip64=True) as zf:
+            for idx in indices:
+                img.seek(idx)
+                frame = img.copy()
+                _salvar_frames_tif([frame], temp_pagina, dpi)
+                del frame
+
+                nome = f"{nome_base}_pagina_{idx + 1:0{digitos}d}.tif"
+                # Mesma página escolhida duas vezes não sobrescreve a anterior no ZIP
+                repeticao = 2
+                while nome in nomes_usados:
+                    nome = f"{nome_base}_pagina_{idx + 1:0{digitos}d}_{repeticao}.tif"
+                    repeticao += 1
+                nomes_usados.add(nome)
+
+                zf.write(temp_pagina, arcname=nome)
+                os.remove(temp_pagina)
+        return saida, len(indices)
+
+
 @router.post("/api/organizar-tif")
 async def organizar_tif_route(
     background_tasks: BackgroundTasks,
     job_id: str = Form(...),
-    page_order: str = Form(...) # Ex: "0,2,1"
+    page_order: str = Form(...), # Ex: "0,2,1"
+    separar: str = Form(default="false"),  # "true": um arquivo TIF por página, entregue em ZIP
+    nome_base: str = Form(default="")       # Nome original (sem extensão) para os arquivos do ZIP
 ):
-    """Reordena o TIF com base no job_id"""
+    """Reordena ou recorta o TIF com base no job_id."""
     job_dir = resolver_job_dir(job_id)
     if job_dir is None or not os.path.isdir(job_dir):
         return Response(content="Sessão inválida ou expirada.", status_code=400)
-        
+
     input_tif = os.path.join(job_dir, "original.tif")
-    output_tif = os.path.join(job_dir, "TIF_Organizado.tif")
-    
+    separar_paginas = separar.strip().lower() == "true"
+
     try:
-        order = [int(x) for x in page_order.split(",") if x.strip() != ""]
+        try:
+            order = [int(x) for x in page_order.split(",") if x.strip() != ""]
+        except ValueError:
+            order = []
         if not order:
             return Response(content="Ordem inválida.", status_code=400)
-            
-        with Image.open(input_tif) as img:
-            new_frames = []
-            all_bw = True
-            for idx in order:
-                if idx < getattr(img, 'n_frames', 1):
-                    img.seek(idx)
-                    frame = img.copy()
-                    
-                    # Verificação de fidelidade: mantemos o modo original
-                    if frame.mode != '1':
-                        all_bw = False
-                        
-                    new_frames.append(frame)
-                    
-            if new_frames:
-                # Lógica de Inteligência de Compressão:
-                # 1. Se tudo for P&B (Mode 1), Group 4 mantém o tamanho original (~30MB).
-                # 2. Se houver cor, Adobe Deflate preserva fidelidade sem inflar como o JPEG.
-                comp = "group4" if all_bw else "tiff_adobe_deflate"
-                
-                new_frames[0].save(
-                    output_tif,
-                    save_all=True,
-                    append_images=new_frames[1:],
-                    format="TIFF",
-                    compression=comp
-                )
-        
+
+        # Processamento em thread separada para não travar o servidor (HA)
+        saida, qtd_arquivos = await asyncio.to_thread(
+            _organizar_tif_sync, input_tif, job_dir, order, separar_paginas, nome_base_seguro(nome_base)
+        )
+
         bytes_in = os.path.getsize(input_tif)
-        bytes_out = os.path.getsize(output_tif)
-        await registrar_log(f"[SUCESSO] TIF Organizado via Job {job_id[:8]} ({bytes_in} bytes -> {bytes_out} bytes)")
-        
+        bytes_out = os.path.getsize(saida)
+        modo = f"separado em {qtd_arquivos} arquivo(s)" if separar_paginas else "arquivo único"
+        await registrar_log(f"[SUCESSO] TIF Organizado via Job {job_id[:8]}, {modo} ({bytes_in} bytes -> {bytes_out} bytes)")
+
         # Agendamos limpeza para ocorrer após retornar a resposta
         background_tasks.add_task(cleanup_job_dir, job_dir)
-        
+
+        if separar_paginas:
+            return FileResponse(
+                saida,
+                media_type='application/zip',
+                filename="TIF_Paginas.zip",
+                headers={"X-Total-Files": str(qtd_arquivos)}
+            )
         return FileResponse(
-            output_tif, 
-            media_type='image/tiff', 
+            saida,
+            media_type='image/tiff',
             filename="TIF_Organizado.tif"
         )
+    except SelecaoInvalida as e:
+        # Mantém o arquivo enviado para o usuário corrigir a seleção e tentar de novo
+        return Response(content=str(e), status_code=400)
     except Exception as e:
         background_tasks.add_task(cleanup_job_dir, job_dir)
         return Response(content=f"Erro ao organizar TIF: {str(e)}", status_code=500)
