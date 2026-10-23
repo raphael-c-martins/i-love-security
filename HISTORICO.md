@@ -5,6 +5,13 @@
 ## Diretrizes de Preservação
 > **ATENÇÃO:** É terminantemente PROIBIDO realizar o apagamento de logs da pasta `/logs/` ou o reset de banco de dados em qualquer circunstância de manutenção, atualização ou refatoração do sistema.
 
+## [23/10/2026] - FastAPI, Starlette e Pillow atualizados e CI
+
+- **fastapi 0.129.0 → 0.161.1, starlette 0.52.1 → 1.9.0, pillow 12.2.0 → 13.0.0, python-multipart 0.0.22 → 0.0.32:** havia 58 falhas conhecidas nessas versões; o conjunto novo não tem nenhuma. O código só usa `BackgroundTask` do Starlette, que continua igual no 1.x. Os 29 testes passaram.
+- **CI no GitHub:** a cada envio rodam os testes com `requirements-ci.txt` (só as 6 bibliotecas que os testes usam; a lista completa traz TensorFlow/PyTorch) e a busca de segredos.
+- **Problema antigo encontrado:** o `requirements.txt` completo não instala do zero. `ml-dtypes==0.2.0`/TensorFlow 2.14 pedem numpy 1.x, mas o arquivo fixa `numpy==2.4.4` (parece um `pip freeze` de um ambiente montado aos poucos). Precisa ser revisado antes de montar o ambiente numa máquina nova.
+- **No servidor:** atualizar só esses quatro pacotes (`pip install fastapi==0.161.1 starlette==1.9.0 pillow==13.0.0 python-multipart==0.0.32`) e reiniciar.
+
 ## [21/10/2026] - IP Real do Cliente Atrás do Nginx (Log de Auditoria)
 
 - **Motivo:** Ao levar as correções para a versão do cartório, foi encontrado lá um código que confiava no **primeiro** valor do `X-Forwarded-For`. Esse valor pode ser forjado pelo navegador para falsificar o IP no log de auditoria. A correção foi trazida também para esta versão, para `utils/seguranca.py` ser igual nos dois repositórios.
